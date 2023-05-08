@@ -1,0 +1,20 @@
+{
+"menu.add":"Ajouter",
+"menu.edit":"Modifier",
+"menu.remove":"Supprimer",
+"menu.create":"Créer",
+"menu.filter":"Filtrer",
+"menu.refresh":"Rafraîchir",
+"menu.save":"Enregistrer",
+"menu.cancel":"Annuler",
+"menu.account":"Compte",
+"menu.account.infos":"Informations du compte",
+"menu.account.show":"Liste des comptes",
+"menu.categories.show":"Liste des catégories",
+"menu.data":"Données",
+"transaction.input":"Entrée",
+"transaction.output":"Sortie",
+"transaction.pending":"En attente",
+"transaction.done":"Validée",
+"menu.transaction":"Transaction"
+}

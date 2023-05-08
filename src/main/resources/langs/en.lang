@@ -1,0 +1,20 @@
+{
+"menu.add":"Add",
+"menu.edit":"Edit",
+"menu.remove":"Remove",
+"menu.create":"Create",
+"menu.filter":"Filter",
+"menu.refresh":"Refresh",
+"menu.save":"Save",
+"menu.cancel":"Cancel",
+"menu.account":"Account",
+"menu.account.infos":"Account infos",
+"menu.account.show":"Show accounts",
+"menu.categories.show":"Show categories",
+"menu.data":"Data",
+"transaction.input":"Input",
+"transaction.output":"Output",
+"transaction.pending":"Pending",
+"transaction.done":"Done",
+"menu.transaction":"Transaction"
+}
