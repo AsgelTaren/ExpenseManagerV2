@@ -10,6 +10,7 @@ import javax.swing.JTabbedPane;
 
 import net.account.AccountListDialog;
 import net.category.CategoryListDialog;
+import net.graph.GraphPanel;
 import net.transaction.TransactionPanel;
 
 public class App {
@@ -52,6 +53,12 @@ public class App {
 		// Tabs
 		tabs = new JTabbedPane();
 		tabs.addTab("Transactions", new TransactionPanel(this));
+		tabs.addTab("Graphs", new GraphPanel(this));
+		tabs.addChangeListener(e -> {
+			if (tabs.getSelectedComponent() instanceof Refreshable r) {
+				r.refresh();
+			}
+		});
 		frame.add(tabs);
 
 		frame.setExtendedState(JFrame.MAXIMIZED_BOTH);

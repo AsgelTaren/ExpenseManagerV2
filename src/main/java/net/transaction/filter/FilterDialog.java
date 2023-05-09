@@ -19,6 +19,8 @@ public class FilterDialog extends JDialog {
 	// Tabs
 	private JTabbedPane tabs;
 	private FilterCategoryTab categories;
+	private FilterAccountTab accounts;
+	private FilterLocationTab locations;
 
 	public FilterDialog(App app, TransactionPanel transactionPanel) {
 		super(app.getJFrame(), "Filters", true);
@@ -29,11 +31,13 @@ public class FilterDialog extends JDialog {
 		gbc.weightx = gbc.weighty = 1;
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.insets = new Insets(5, 5, 5, 5);
-
+		gbc.gridwidth = 2;
 		tabs = new JTabbedPane();
-		tabs.addTab("Category", categories = new FilterCategoryTab(app, transactionPanel.getFilterOptions()));
 		tabs.setPreferredSize(new Dimension(500, 400));
 		tabs.setBorder(BorderFactory.createTitledBorder("Filtering options"));
+		tabs.addTab("Category", categories = new FilterCategoryTab(app, transactionPanel.getFilterOptions()));
+		tabs.addTab("Accounts", accounts = new FilterAccountTab(app, transactionPanel.getFilterOptions()));
+		tabs.addTab("Location", locations = new FilterLocationTab(app, transactionPanel.getFilterOptions()));
 
 		add(tabs, gbc);
 
@@ -41,8 +45,14 @@ public class FilterDialog extends JDialog {
 		apply.addActionListener(e -> applyFilters(transactionPanel));
 		gbc.weighty = 0;
 		gbc.gridy = 1;
+		gbc.gridwidth = 1;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		add(apply, gbc);
+
+		JButton reset = new JButton("Reset filters");
+		reset.addActionListener(e -> resetFilters(transactionPanel));
+		gbc.gridx++;
+		add(reset, gbc);
 
 		pack();
 		setLocationRelativeTo(null);
@@ -56,8 +66,22 @@ public class FilterDialog extends JDialog {
 		dispose();
 	}
 
+	private void resetFilters(TransactionPanel panel) {
+		categories.resetFilter();
+		accounts.resetFilter();
+		locations.resetFilter();
+	}
+
 	public FilterCategoryTab getCategoryTab() {
 		return categories;
+	}
+
+	public FilterAccountTab getAccountTab() {
+		return accounts;
+	}
+
+	public FilterLocationTab getLocationTab() {
+		return locations;
 	}
 
 }

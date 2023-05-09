@@ -11,6 +11,7 @@ dependencies {
 	implementation 'com.formdev:flatlaf:3.1.1'
 	implementation 'com.google.code.gson:gson:2.8.6'
 	implementation 'com.github.lgooddatepicker:LGoodDatePicker:11.2.1'
+	implementation 'org.knowm.xchart:xchart:3.8.0'
 }
 
 application {

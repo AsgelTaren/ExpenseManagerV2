@@ -17,20 +17,20 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
+import net.account.Account;
 import net.app.App;
-import net.category.Category;
 
 @SuppressWarnings("serial")
-public class FilterCategoryTab extends JPanel {
+public class FilterAccountTab extends JPanel {
 
-	private Vector<Category> categories;
+	private Vector<Account> accounts;
 	private boolean[] used;
 	private JCheckBox checkbox_filter;
 	private JButton select, unselect;
 	private JTable table;
-	private FilterCategoryTableModel model;
+	private FilterAccountTableModel model;
 
-	public FilterCategoryTab(App app, FilterOptions filters) {
+	public FilterAccountTab(App app, FilterOptions filters) {
 		super();
 
 		setLayout(new GridBagLayout());
@@ -43,7 +43,7 @@ public class FilterCategoryTab extends JPanel {
 		// Upper panel
 		JPanel up = new JPanel();
 		up.setLayout(new FlowLayout(FlowLayout.LEFT));
-		JLabel label_left = new JLabel("Filter by categories");
+		JLabel label_left = new JLabel("Filter by accounts");
 		up.add(label_left);
 
 		checkbox_filter = new JCheckBox();
@@ -56,12 +56,12 @@ public class FilterCategoryTab extends JPanel {
 
 		// Mid panel
 		try {
-			ResultSet set = app.getDataBase().getStatement().executeQuery("SELECT * FROM categories;");
-			categories = new Vector<>();
+			ResultSet set = app.getDataBase().getStatement().executeQuery("SELECT * FROM accounts;");
+			accounts = new Vector<>();
 			while (set.next()) {
-				categories.add(new Category(set.getInt("id"), set.getString("name")));
+				accounts.add(new Account(set.getInt("id"), set.getString("name")));
 			}
-			used = new boolean[categories.size()];
+			used = new boolean[accounts.size()];
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -73,7 +73,7 @@ public class FilterCategoryTab extends JPanel {
 		gbc.gridheight = 1;
 		gbc.weighty = 1;
 		gbc.fill = GridBagConstraints.BOTH;
-		model = new FilterCategoryTableModel(this);
+		model = new FilterAccountTableModel(this);
 		table = new JTable(model);
 		mid.add(new JScrollPane(table), gbc);
 
@@ -104,17 +104,18 @@ public class FilterCategoryTab extends JPanel {
 			unselect.setEnabled(selection);
 		});
 
-		if (filters.getAllowedCategories() != null) {
+		if (filters.getAllowedAccounts() != null) {
 			checkbox_filter.setSelected(true);
-			HashMap<Integer, Integer> catMap = new HashMap<>();
-			for (int i = 0; i < categories.size(); i++) {
-				catMap.put(categories.get(i).getId(), i);
+			HashMap<Integer, Integer> accountMap = new HashMap<>();
+			for (int i = 0; i < accounts.size(); i++) {
+				accountMap.put(accounts.get(i).getId(), i);
 			}
 
-			for (Category cat : filters.getAllowedCategories()) {
-				used[catMap.get(cat.getId())] = true;
+			for (Account account : filters.getAllowedAccounts()) {
+				used[accountMap.get(account.getId())] = true;
 			}
 		}
+
 		onCheckBoxUpdate();
 	}
 
@@ -142,34 +143,34 @@ public class FilterCategoryTab extends JPanel {
 		return checkbox_filter.isSelected();
 	}
 
-	public Vector<Category> getAllowedCategories() {
-		Vector<Category> res = new Vector<>();
-		for (int i = 0; i < categories.size(); i++) {
+	public Vector<Account> getAllowedAccount() {
+		Vector<Account> res = new Vector<>();
+		for (int i = 0; i < accounts.size(); i++) {
 			if (used[i]) {
-				res.add(categories.get(i));
+				res.add(accounts.get(i));
 			}
 		}
 		return res;
 	}
 
 	public void resetFilter() {
-		used = new boolean[categories.size()];
+		used = new boolean[accounts.size()];
 		checkbox_filter.setSelected(false);
 		table.repaint();
 	}
 
-	private class FilterCategoryTableModel extends AbstractTableModel {
+	private class FilterAccountTableModel extends AbstractTableModel {
 
-		private FilterCategoryTab tab;
+		private FilterAccountTab tab;
 
-		public FilterCategoryTableModel(FilterCategoryTab tab) {
+		public FilterAccountTableModel(FilterAccountTab tab) {
 			super();
 			this.tab = tab;
 		}
 
 		@Override
 		public int getRowCount() {
-			return tab.categories.size();
+			return tab.accounts.size();
 		}
 
 		@Override
@@ -181,7 +182,7 @@ public class FilterCategoryTab extends JPanel {
 		public Object getValueAt(int rowIndex, int columnIndex) {
 			switch (columnIndex) {
 			case 0:
-				return tab.categories.get(rowIndex);
+				return tab.accounts.get(rowIndex);
 			case 1:
 				return tab.used[rowIndex];
 			}
@@ -190,14 +191,14 @@ public class FilterCategoryTab extends JPanel {
 
 		@Override
 		public Class<?> getColumnClass(int col) {
-			return col == 0 ? Category.class : Boolean.class;
+			return col == 0 ? Account.class : Boolean.class;
 		}
 
 		@Override
 		public String getColumnName(int col) {
 			switch (col) {
 			case 0:
-				return "Category";
+				return "Account";
 			case 1:
 				return "Used";
 			}
