@@ -59,7 +59,7 @@ public class FilterAccountTab extends JPanel {
 			ResultSet set = app.getDataBase().getStatement().executeQuery("SELECT * FROM accounts;");
 			accounts = new Vector<>();
 			while (set.next()) {
-				accounts.add(new Account(set.getInt("id"), set.getString("name")));
+				accounts.add(new Account(set.getInt("id"), set.getString("name"), set.getFloat("balance")));
 			}
 			used = new boolean[accounts.size()];
 		} catch (SQLException e) {

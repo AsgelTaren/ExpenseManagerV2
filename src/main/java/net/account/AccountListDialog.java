@@ -70,7 +70,7 @@ public class AccountListDialog extends JDialog {
 
 		JButton add = new JButton("Add");
 		add.addActionListener(e -> {
-			AccountDialog dialog = new AccountDialog(app, this, new Account(-1, ""));
+			AccountDialog dialog = new AccountDialog(app, this, new Account(-1, "", 0));
 			dialog.setVisible(true);
 		});
 		gbc.gridy = 1;

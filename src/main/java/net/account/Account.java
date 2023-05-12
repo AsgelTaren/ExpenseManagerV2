@@ -9,22 +9,27 @@ public class Account {
 
 	private int id;
 	private String name;
+	private float balance;
 
-	public Account(int id, String name) {
+	public Account(int id, String name, float balance) {
 		this.id = id;
 		this.name = name;
+		this.balance = balance;
 	}
 
 	public void insertIntoDB(DataBase db) throws SQLException {
-		PreparedStatement st = db.getConnection().prepareStatement("insert into accounts (name) values (?);");
+		PreparedStatement st = db.getConnection().prepareStatement("insert into accounts (name,balance) values (?,?);");
 		st.setString(1, name);
+		st.setFloat(2, balance);
 		st.executeUpdate();
 	}
 
 	public void saveToDB(DataBase db) throws SQLException {
-		PreparedStatement st = db.getConnection().prepareStatement("update accounts set name=? where id=?;");
+		PreparedStatement st = db.getConnection()
+				.prepareStatement("update accounts set name=?, balance = ? where id=?;");
 		st.setString(1, name);
-		st.setInt(2, id);
+		st.setFloat(2, balance);
+		st.setInt(3, id);
 		st.executeUpdate();
 	}
 
@@ -58,6 +63,14 @@ public class Account {
 		this.name = name;
 	}
 
+	public float getBalance() {
+		return balance;
+	}
+
+	public void setBalance(float balance) {
+		this.balance = balance;
+	}
+
 	@Override
 	public String toString() {
 		return name;
@@ -66,6 +79,11 @@ public class Account {
 	@Override
 	public boolean equals(Object obj) {
 		return obj instanceof Account a ? a.id == this.id : false;
+	}
+
+	@Override
+	public int hashCode() {
+		return id;
 	}
 
 }

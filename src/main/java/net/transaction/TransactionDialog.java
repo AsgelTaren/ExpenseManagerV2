@@ -107,7 +107,7 @@ public class TransactionDialog extends JDialog {
 			ResultSet set = app.getDataBase().getStatement().executeQuery("select * from accounts;");
 			accounts = new Vector<>(set.getFetchSize());
 			while (set.next()) {
-				accounts.add(new Account(set.getInt("id"), set.getString("name")));
+				accounts.add(new Account(set.getInt("id"), set.getString("name"), set.getFloat("balance")));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();

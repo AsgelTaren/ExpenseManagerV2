@@ -13,7 +13,9 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
 
 import net.app.App;
 
@@ -44,6 +46,21 @@ public class AccountDialog extends JDialog {
 		gbc.gridx = 1;
 		panel.add(field_name, gbc);
 
+		JLabel label_balance = new JLabel("Balance");
+		gbc.gridx = 0;
+		gbc.gridy++;
+		panel.add(label_balance, gbc);
+
+		SpinnerNumberModel model = new SpinnerNumberModel();
+		model.setValue((double) account.getBalance());
+		model.setMaximum(null);
+		model.setMinimum(null);
+		model.setStepSize(0.01);
+		JSpinner field_balance = new JSpinner(model);
+		field_balance.setPreferredSize(new Dimension(150, 25));
+		gbc.gridx++;
+		panel.add(field_balance, gbc);
+
 		add(panel);
 
 		JPanel buttons = new JPanel();
@@ -59,6 +76,7 @@ public class AccountDialog extends JDialog {
 			try {
 				if (!problem) {
 					account.setName(field_name.getText());
+					account.setBalance(((Number) field_balance.getValue()).floatValue());
 					account.applyToDB(app.getDataBase());
 					parent.refreshList();
 					setVisible(false);

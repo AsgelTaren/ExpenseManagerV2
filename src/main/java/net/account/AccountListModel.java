@@ -23,7 +23,7 @@ public class AccountListModel extends AbstractListModel<Account> {
 			ResultSet set = app.getDataBase().getStatement().executeQuery("select * from accounts;");
 			accounts = new ArrayList<>();
 			while (set.next()) {
-				accounts.add(new Account(set.getInt("id"), set.getString("name")));
+				accounts.add(new Account(set.getInt("id"), set.getString("name"), set.getFloat("balance")));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();

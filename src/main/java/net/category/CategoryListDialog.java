@@ -29,7 +29,7 @@ public class CategoryListDialog extends JDialog {
 	private JList<Category> list;
 	private CategoryListModel model;
 	private JButton edit, remove;
-	private JTextField field_sum;
+	private JTextField field_sum, field_id;
 	private HashMap<Integer, Integer> numberOfTrans;
 
 	public CategoryListDialog(App app) {
@@ -111,9 +111,9 @@ public class CategoryListDialog extends JDialog {
 
 		add(listPanel);
 
-		JPanel accountPanel = new JPanel();
-		accountPanel.setLayout(new GridBagLayout());
-		accountPanel.setBorder(BorderFactory.createTitledBorder("Category informations"));
+		JPanel catPanel = new JPanel();
+		catPanel.setLayout(new GridBagLayout());
+		catPanel.setBorder(BorderFactory.createTitledBorder("Category informations"));
 		JLabel label_sum = new JLabel("Number of transactions");
 		label_sum.setPreferredSize(new Dimension(150, 25));
 		label_sum.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -124,15 +124,27 @@ public class CategoryListDialog extends JDialog {
 		gbc.weightx = 1;
 		gbc.weighty = 0;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
-		accountPanel.add(label_sum, gbc);
+		catPanel.add(label_sum, gbc);
 
 		field_sum = new JTextField();
 		field_sum.setEditable(false);
 		field_sum.setPreferredSize(new Dimension(150, 25));
 		gbc.gridy++;
-		accountPanel.add(field_sum, gbc);
+		catPanel.add(field_sum, gbc);
 
-		add(accountPanel);
+		JLabel label_id = new JLabel("ID");
+		label_sum.setPreferredSize(new Dimension(150, 25));
+		label_sum.setAlignmentX(Component.LEFT_ALIGNMENT);
+		gbc.gridy++;
+		catPanel.add(label_id, gbc);
+
+		field_id = new JTextField();
+		field_id.setEditable(false);
+		field_id.setPreferredSize(new Dimension(150, 25));
+		gbc.gridy++;
+		catPanel.add(field_id, gbc);
+
+		add(catPanel);
 
 		pack();
 		setLocationRelativeTo(null);
@@ -147,6 +159,9 @@ public class CategoryListDialog extends JDialog {
 		Category target = list.getSelectedIndex() > -1 ? model.getElementAt(list.getSelectedIndex()) : null;
 		field_sum.setText(target != null ? numberOfTrans.get(target.getId()) + "" : "");
 		field_sum.repaint();
+
+		field_id.setText(target != null ? target.getId() + "" : "");
+		field_id.repaint();
 	}
 
 	public void refreshList() {

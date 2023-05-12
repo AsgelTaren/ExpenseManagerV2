@@ -33,7 +33,8 @@ public class TransactionTableModel extends AbstractTableModel {
 			ResultSet set = st.executeQuery();
 			accounts = new HashMap<>();
 			while (set.next()) {
-				accounts.put(set.getInt("id"), new Account(set.getInt("id"), set.getString("name")));
+				accounts.put(set.getInt("id"),
+						new Account(set.getInt("id"), set.getString("name"), set.getFloat("balance")));
 			}
 
 			st = app.getDataBase().getConnection().prepareStatement("select * from categories;");

@@ -112,7 +112,9 @@ public class FilterLocationTab extends JPanel {
 			}
 
 			for (String location : filters.getAllowedLocations()) {
-				used[accountMap.get(location)] = true;
+				Integer target = accountMap.get(location);
+				if (target != null && target.intValue() > -1)
+					used[target] = true;
 			}
 		}
 

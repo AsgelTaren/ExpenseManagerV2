@@ -8,6 +8,7 @@ public class Main {
 		FlatDarkLaf.setup();
 		App app = new App();
 		app.create();
+
 	}
 
 }

@@ -67,4 +67,9 @@ public class Category {
 	public boolean equals(Object obj) {
 		return obj instanceof Category cat ? cat.id == this.id : false;
 	}
+
+	@Override
+	public int hashCode() {
+		return id;
+	}
 }
