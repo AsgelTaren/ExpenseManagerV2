@@ -174,7 +174,7 @@ public class TransactionPanel extends JPanel {
 
 		for (Transaction trans : model.getTransactions()) {
 			TreeMeta target = meta.get(trans.getCategory());
-			target.amount += trans.getAmount();
+			target.amount = target.amount + (trans.isOutput() ? -trans.getAmount() : trans.getAmount());
 			target.count++;
 			if (trans.isOutput()) {
 				target.outputs++;
@@ -217,7 +217,7 @@ public class TransactionPanel extends JPanel {
 
 		for (Transaction trans : model.getTransactions()) {
 			TreeMeta target = meta.get(trans.getAccount());
-			target.amount += trans.getAmount();
+			target.amount = target.amount + (trans.isOutput() ? -trans.getAmount() : trans.getAmount());
 			target.count++;
 			if (trans.isOutput()) {
 				target.outputs++;

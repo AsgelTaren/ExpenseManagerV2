@@ -39,6 +39,18 @@ public class DataBase {
 		loadTables();
 	}
 
+	public DataBase() {
+		try {
+			conn = DriverManager.getConnection("jdbc:mysql://82.123.52.171:25565/expensemanager", "testuser",
+					"password");
+			st = conn.createStatement();
+			st.setQueryTimeout(30);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		loadTables();
+	}
+
 	private void ensureFileExistence() {
 		if (!file.exists()) {
 			file.getParentFile().mkdirs();

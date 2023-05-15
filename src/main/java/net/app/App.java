@@ -1,7 +1,5 @@
 package net.app;
 
-import java.io.File;
-
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -40,7 +38,8 @@ public class App {
 		langAtlas.loadLang();
 
 		// Connecting to the database
-		db = new DataBase(new File("testZone/test.db"));
+		//db = new DataBase(new File("testZone/test.db"));
+		db = new DataBase();
 
 		// UI
 		frame = new JFrame("ExpenseManagerV2");

@@ -13,7 +13,7 @@ import com.google.gson.JsonParser;
 public class IconAtlas {
 
 	private HashMap<String, BufferedImage> atlas = new HashMap<>();
-	
+
 	public IconAtlas() {
 		super();
 	}
