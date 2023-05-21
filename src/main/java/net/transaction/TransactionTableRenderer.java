@@ -3,6 +3,8 @@ package net.transaction;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.swing.ImageIcon;
@@ -16,6 +18,8 @@ import net.transaction.TransactionTableModel.StatusHolder;
 
 @SuppressWarnings("serial")
 public class TransactionTableRenderer extends DefaultTableCellRenderer {
+	
+	public static final DateFormat renderFormat = new SimpleDateFormat("EEEE dd MMMM yyyy");
 
 	private String input, output, pending, done;
 	private ImageIcon inputIcon, outputIcon, pendingIcon, doneIcon;
@@ -53,7 +57,7 @@ public class TransactionTableRenderer extends DefaultTableCellRenderer {
 			res.setIcon(status ? doneIcon : pendingIcon);
 		}
 		if (value instanceof Date date) {
-			res.setText(Transaction.DATE_FORMAT.format(date));
+			res.setText(renderFormat.format(date));
 		}
 		return res;
 	}

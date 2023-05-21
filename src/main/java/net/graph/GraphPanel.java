@@ -1,5 +1,7 @@
 package net.graph;
 
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,6 +17,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 import javax.swing.UIManager;
 
 import org.knowm.xchart.BitmapEncoder;
@@ -45,31 +48,54 @@ public class GraphPanel extends JPanel implements Refreshable {
 	private PieChart inputChart, outputChart;
 	private XChartPanel<PieChart> inputPanel, outputPanel;
 
+	private PieChart perAccount;
+	private XChartPanel<PieChart> perAccountPanel;
+
 	private CategoryChart perMonth;
 	private XChartPanel<CategoryChart> perMonthPanel;
 
-	private PieChart perAccount;
-	private XChartPanel<PieChart> perAccountPanel;
+	private CategoryChart perMonthAccount;
+	private XChartPanel<CategoryChart> perMonthAccountPanel;
+
+	private JTabbedPane tabs;
 
 	public GraphPanel(App app) {
 		super();
 
 		this.app = app;
 
+		tabs = new JTabbedPane();
+
+		JPanel target = new JPanel();
+		target.setLayout(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = gbc.gridy = 0;
+		gbc.gridwidth = gbc.gridheight = 1;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+
 		inputChart = new PieChartBuilder().width(600).height(400).title("Inputs").build();
 		setPieChartStyle(inputChart);
 		inputPanel = new XChartPanel<>(inputChart);
-		add(inputPanel);
+		target.add(inputPanel, gbc);
 
 		outputChart = new PieChartBuilder().width(600).height(400).title("Outputs").build();
 		setPieChartStyle(outputChart);
 		outputPanel = new XChartPanel<>(outputChart);
-		add(outputPanel);
+		gbc.gridx++;
+		target.add(outputPanel, gbc);
 
 		perAccount = new PieChartBuilder().width(600).height(400).title("Per Account").build();
 		setPieChartStyle(perAccount);
 		perAccountPanel = new XChartPanel<>(perAccount);
-		add(perAccountPanel);
+		gbc.gridx++;
+		target.add(perAccountPanel, gbc);
+
+		tabs.addTab("Global", target);
+
+		target = new JPanel();
+		target.setLayout(new GridBagLayout());
+		gbc.gridx = 0;
+		gbc.gridy = 0;
 
 		perMonth = new CategoryChartBuilder().width(1800).height(400).title("Per Month").build();
 		perMonth.getStyler().setDatePattern("yyyy-MM");
@@ -77,7 +103,25 @@ public class GraphPanel extends JPanel implements Refreshable {
 		perMonth.getStyler().setyAxisTickLabelsFormattingFunction(d -> d.intValue() + "\u20ac");
 		setCategoryChartStyle(perMonth);
 		perMonthPanel = new XChartPanel<>(perMonth);
-		add(perMonthPanel);
+		target.add(perMonthPanel, gbc);
+
+		perMonthAccount = new CategoryChartBuilder().width(1800).height(400).title("Per Month and accounts").build();
+		perMonthAccount.getStyler().setDatePattern("yyyy-MM");
+		perMonthAccount.getStyler().setToolTipsEnabled(true);
+		perMonthAccount.getStyler().setyAxisTickLabelsFormattingFunction(d -> d.intValue() + "\u20ac");
+		setCategoryChartStyle(perMonthAccount);
+		perMonthAccountPanel = new XChartPanel<>(perMonthAccount);
+		gbc.gridy++;
+		target.add(perMonthAccountPanel, gbc);
+
+		tabs.addTab("Per Month", target);
+
+		setLayout(new GridBagLayout());
+		gbc.gridx = gbc.gridy = 0;
+		gbc.weightx = gbc.weighty = 1;
+		gbc.fill = GridBagConstraints.BOTH;
+
+		add(tabs, gbc);
 
 		refresh();
 
@@ -135,7 +179,7 @@ public class GraphPanel extends JPanel implements Refreshable {
 		}
 	}
 
-	private void queryPerMonth() {
+	private void queryPerMonthCategories() {
 		// Removing old series from the chart
 		Set<Entry<String, CategorySeries>> data = perMonth.getSeriesMap().entrySet();
 		Iterator<Entry<String, CategorySeries>> it = data.iterator();
@@ -179,6 +223,60 @@ public class GraphPanel extends JPanel implements Refreshable {
 		}
 	}
 
+	private void queryPerMonthAccounts() {
+		// Removing old series from the chart
+		Set<Entry<String, CategorySeries>> data = perMonthAccount.getSeriesMap().entrySet();
+		Iterator<Entry<String, CategorySeries>> it = data.iterator();
+		while (it.hasNext()) {
+			it.next();
+			it.remove();
+		}
+		try {
+			ResultSet set = app.getDataBase().getStatement().executeQuery(
+					"select substring(date_application,1,7) as \"date\", sum(case when output = 1 then -amount else amount end) as \"sum\",account as \"account\" from transactions"
+							+ " group by date,account;");
+			// Lists to store final data
+			List<Date> dates = new ArrayList<>();
+			HashMap<Integer, ArrayList<Float>> map = new HashMap<Integer, ArrayList<Float>>();
+			accounts.values().stream().forEach(cat -> map.put(cat.getId(), new ArrayList<>()));
+			map.put(-1, new ArrayList<>());
+			Date last = null;
+			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM");
+			try {
+				while (set.next()) {
+					Date target = format.parse(set.getString("date"));
+					if (!target.equals(last)) {
+						last = target;
+						accounts.values().stream().forEach(cat -> map.get(cat.getId()).add(0f));
+						map.get(-1).add(0f);
+						dates.add(target);
+					}
+					ArrayList<Float> array = map.get(set.getInt("account"));
+					array.set(array.size() - 1, set.getFloat("sum"));
+				}
+				ArrayList<Float> total = map.get(-1);
+				accounts.values().stream().forEach(cat -> {
+					ArrayList<Float> target = map.get(cat.getId());
+					for (int i = 0; i < target.size(); i++) {
+						total.set(i, total.get(i) + target.get(i));
+					}
+				});
+
+				accounts.values().stream().forEach(cat -> {
+					if (map.get(cat.getId()).size() > 0)
+						perMonthAccount.addSeries(cat.getName(), dates, map.get(cat.getId()));
+				});
+
+				perMonthAccount.addSeries("Total", dates, map.get(-1));
+
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
 	private void queryPerAccount() {
 		// Removing old series from the chart
 		Set<Entry<String, PieSeries>> data = perAccount.getSeriesMap().entrySet();
@@ -210,13 +308,17 @@ public class GraphPanel extends JPanel implements Refreshable {
 		outputPanel.revalidate();
 		outputPanel.repaint();
 
-		queryPerMonth();
+		queryPerMonthCategories();
 		perMonthPanel.revalidate();
 		perMonthPanel.repaint();
 
 		queryPerAccount();
 		perAccountPanel.revalidate();
 		perAccountPanel.repaint();
+
+		queryPerMonthAccounts();
+		perMonthAccountPanel.revalidate();
+		perMonthAccountPanel.repaint();
 	}
 
 	private void setPieChartStyle(PieChart target) {
@@ -225,6 +327,7 @@ public class GraphPanel extends JPanel implements Refreshable {
 		target.getStyler().setPlotContentSize(0.5);
 		target.getStyler().setAnnotationDistance(1.6);
 		target.getStyler().setAnnotationType(AnnotationType.Value);
+		target.getStyler().setToolTipsEnabled(true);
 		target.getStyler().setDrawAllAnnotations(true);
 		target.getStyler().setChartBackgroundColor(UIManager.getColor("Panel.background"));
 		target.getStyler().setAnnotationsFontColor(UIManager.getColor("TextField.foreground"));
