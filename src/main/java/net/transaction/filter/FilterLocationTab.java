@@ -15,6 +15,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.table.AbstractTableModel;
 
 import net.account.Account;
@@ -23,8 +24,7 @@ import net.app.App;
 @SuppressWarnings("serial")
 public class FilterLocationTab extends JPanel {
 
-	private Vector<String> locations;
-	private boolean[] used;
+	private Vector<FilterLocationHolder> locations, shown;
 	private JCheckBox checkbox_filter;
 	private JButton select, unselect;
 	private JTable table;
@@ -54,14 +54,16 @@ public class FilterLocationTab extends JPanel {
 		add(up, gbc);
 
 		// Mid panel
+		HashMap<String, FilterLocationHolder> locMap = new HashMap<>();
 		try {
 			ResultSet set = app.getDataBase().getStatement()
 					.executeQuery("SELECT location FROM transactions GROUP BY location;");
 			locations = new Vector<>();
 			while (set.next()) {
-				locations.add(set.getString("location"));
+				FilterLocationHolder holder = new FilterLocationHolder(set.getString("location"), false);
+				locations.add(holder);
+				locMap.put(holder.location, holder);
 			}
-			used = new boolean[locations.size()];
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -71,8 +73,14 @@ public class FilterLocationTab extends JPanel {
 		gbc.gridx = gbc.gridy = 0;
 		gbc.gridwidth = 2;
 		gbc.gridheight = 1;
-		gbc.weighty = 1;
 		gbc.fill = GridBagConstraints.BOTH;
+
+		JTextField search = new JTextField();
+		search.addActionListener(e -> searchByName(search.getText()));
+		mid.add(search, gbc);
+
+		gbc.weighty = 1;
+		gbc.gridy++;
 		model = new FilterLocationTableModel(this);
 		table = new JTable(model);
 		mid.add(new JScrollPane(table), gbc);
@@ -106,31 +114,44 @@ public class FilterLocationTab extends JPanel {
 
 		if (filters.getAllowedLocations() != null) {
 			checkbox_filter.setSelected(true);
-			HashMap<String, Integer> accountMap = new HashMap<>();
-			for (int i = 0; i < locations.size(); i++) {
-				accountMap.put(locations.get(i), i);
-			}
-
-			for (String location : filters.getAllowedLocations()) {
-				Integer target = accountMap.get(location);
-				if (target != null && target.intValue() > -1)
-					used[target] = true;
+			for (String loc : filters.getAllowedLocations()) {
+				locMap.get(loc).used = true;
 			}
 		}
 
 		onCheckBoxUpdate();
+
+		shown = new Vector<>(locations);
+	}
+
+	private void searchByName(String value) {
+		if (value == null || value.equals("")) {
+			shown = new Vector<>(locations);
+
+		} else {
+			value = value.toLowerCase();
+			shown = new Vector<>(locations.size());
+			for (FilterLocationHolder holder : locations) {
+				if (holder.location.toLowerCase().contains(value)) {
+					shown.add(holder);
+				}
+			}
+		}
+		table.revalidate();
+		table.repaint();
+		table.clearSelection();
 	}
 
 	private void useSelection() {
 		for (int i : table.getSelectedRows()) {
-			used[i] = true;
+			shown.get(i).used = true;
 		}
 		table.repaint();
 	}
 
 	private void unUseSelection() {
 		for (int i : table.getSelectedRows()) {
-			used[i] = false;
+			shown.get(i).used = false;
 		}
 		table.repaint();
 	}
@@ -147,18 +168,30 @@ public class FilterLocationTab extends JPanel {
 
 	public Vector<String> getAllowedLocations() {
 		Vector<String> res = new Vector<>();
-		for (int i = 0; i < locations.size(); i++) {
-			if (used[i]) {
-				res.add(locations.get(i));
+		for (FilterLocationHolder holder : locations) {
+			if (holder.used) {
+				res.add(holder.location);
 			}
 		}
 		return res;
 	}
 
 	public void resetFilter() {
-		used = new boolean[locations.size()];
+		for (FilterLocationHolder holder : locations) {
+			holder.used = false;
+		}
 		checkbox_filter.setSelected(false);
 		table.repaint();
+	}
+
+	private class FilterLocationHolder {
+		private String location;
+		private boolean used;
+
+		private FilterLocationHolder(String location, boolean used) {
+			this.location = location;
+			this.used = used;
+		}
 	}
 
 	private class FilterLocationTableModel extends AbstractTableModel {
@@ -172,7 +205,7 @@ public class FilterLocationTab extends JPanel {
 
 		@Override
 		public int getRowCount() {
-			return tab.locations.size();
+			return tab.shown.size();
 		}
 
 		@Override
@@ -184,9 +217,9 @@ public class FilterLocationTab extends JPanel {
 		public Object getValueAt(int rowIndex, int columnIndex) {
 			switch (columnIndex) {
 			case 0:
-				return tab.locations.get(rowIndex);
+				return tab.shown.get(rowIndex).location;
 			case 1:
-				return tab.used[rowIndex];
+				return tab.shown.get(rowIndex).used;
 			}
 			return null;
 		}
@@ -215,7 +248,7 @@ public class FilterLocationTab extends JPanel {
 		@Override
 		public void setValueAt(Object value, int row, int col) {
 			if (col == 1) {
-				used[row] = (Boolean) value;
+				tab.shown.get(row).used = (Boolean) value;
 			}
 		}
 	}

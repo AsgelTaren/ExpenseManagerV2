@@ -31,4 +31,8 @@ public class IconAtlas {
 		return new ImageIcon(atlas.get(key).getScaledInstance(size, size, Image.SCALE_SMOOTH));
 	}
 
+	public Image getRawImage(String key, int size) {
+		return  atlas.get(key).getScaledInstance(size, size, Image.SCALE_SMOOTH);
+	}
+
 }

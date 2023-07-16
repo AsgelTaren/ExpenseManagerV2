@@ -7,6 +7,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
@@ -36,7 +38,7 @@ import net.app.Utils;
 import net.category.Category;
 
 @SuppressWarnings("serial")
-public class TransactionDialog extends JDialog {
+public class TransactionDialog extends JDialog implements KeyListener{
 
 	public TransactionDialog(App app, TransactionPanel transactionPanel, Transaction transaction) {
 		super(app.getJFrame(), app.getLangAtlas().getText("menu.transaction"), true);
@@ -314,6 +316,24 @@ public class TransactionDialog extends JDialog {
 			}
 			return res;
 		}
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		System.out.println("OK");
+		
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

@@ -46,7 +46,7 @@ public class App {
 		// UI
 		frame = new JFrame("ExpenseManagerV2");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
+		frame.setIconImage(iconAtlas.getRawImage("logo", 64));
 		// Menu bar
 		createJMenuBar();
 		frame.setJMenuBar(menubar);

@@ -7,12 +7,14 @@ import java.util.stream.Collectors;
 import net.account.Account;
 import net.app.App;
 import net.category.Category;
+import net.transaction.Transaction;
 
 public class FilterOptions {
 
 	private Vector<Category> categories;
 	private Vector<Account> accounts;
 	private Vector<String> locations;
+	private Vector<Transaction> transactions;
 
 	public FilterOptions(FilterDialog dialog) {
 		if (dialog.getCategoryTab().isOn()) {
@@ -48,6 +50,11 @@ public class FilterOptions {
 
 		if (locations != null) {
 			options.add("location IN " + locations.stream().collect(Collectors.joining("\",\"", "(\"", "\")")));
+		}
+
+		if (transactions != null) {
+			options.add("id IN "
+					+ transactions.stream().map(tran -> tran.getId() + "").collect(Collectors.joining(",", "(", ")")));
 		}
 
 		if (options.size() > 0) {

@@ -3,10 +3,15 @@ package net.transaction;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.StringJoiner;
+import java.util.Vector;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -26,7 +31,7 @@ import net.transaction.filter.FilterDialog;
 import net.transaction.filter.FilterOptions;
 
 @SuppressWarnings("serial")
-public class TransactionPanel extends JPanel {
+public class TransactionPanel extends JPanel implements KeyListener {
 
 	private App app;
 
@@ -34,6 +39,7 @@ public class TransactionPanel extends JPanel {
 	private TransactionTableModel model;
 	private JToolBar toolbar;
 	private JTree categoryTree, accountTree;
+	private TransactionTransferHandler transferHandler;
 
 	private FilterOptions filters;
 
@@ -50,6 +56,8 @@ public class TransactionPanel extends JPanel {
 		createToolBar();
 		add(toolbar, gbc);
 
+		transferHandler = new TransactionTransferHandler(this);
+
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.gridy = 1;
 		gbc.weighty = 1;
@@ -58,6 +66,9 @@ public class TransactionPanel extends JPanel {
 		table = new JTable(model);
 		table.setDefaultRenderer(String.class, new TransactionTableRenderer(app));
 		table.getSelectionModel().addListSelectionListener(e -> selectionChanged());
+		table.addKeyListener(this);
+		table.setTransferHandler(transferHandler);
+		table.setDragEnabled(true);
 
 		JPanel queryPanel = new JPanel();
 		queryPanel.setBorder(BorderFactory.createTitledBorder("Query results"));
@@ -69,6 +80,7 @@ public class TransactionPanel extends JPanel {
 
 		categoryTree = new JTree();
 		categoryTree.setCellRenderer(new TransactionTreeRenderer(app));
+		categoryTree.setTransferHandler(transferHandler);
 		gbc.gridy = 1;
 		gbc.gridwidth = 1;
 		gbc.weightx = 1;
@@ -76,6 +88,7 @@ public class TransactionPanel extends JPanel {
 
 		accountTree = new JTree();
 		accountTree.setCellRenderer(new TransactionTreeRenderer(app));
+		accountTree.setTransferHandler(transferHandler);
 		gbc.gridx = 1;
 		queryPanel.add(new JScrollPane(accountTree), gbc);
 
@@ -135,6 +148,11 @@ public class TransactionPanel extends JPanel {
 		int[] selection = table.getSelectedRows();
 		if (selection.length == 1) {
 			TransactionDialog dialog = new TransactionDialog(app, this, model.getTransactions().get(selection[0]));
+			dialog.setVisible(true);
+		} else {
+			TransactionMultipleSelectionDialog dialog = new TransactionMultipleSelectionDialog(app, this,
+					Arrays.stream(selection).<Transaction>mapToObj(index -> model.getTransactions().get(index))
+							.collect(Collectors.toCollection(Vector::new)));
 			dialog.setVisible(true);
 		}
 	}
@@ -265,6 +283,32 @@ public class TransactionPanel extends JPanel {
 		updateAccountTree();
 	}
 
+	public Vector<Transaction> getSelectedTransactions() {
+		Vector<Transaction> res = new Vector<>();
+		for (int i : table.getSelectedRows()) {
+			res.add(model.getTransactions().get(i));
+		}
+		return res;
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		if (e.isControlDown() && e.isShiftDown() && e.getKeyCode() == KeyEvent.VK_A) {
+			table.clearSelection();
+			addTransaction();
+		}
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+
+	}
+
 	public TransactionTableModel getTransactionTableModel() {
 		return model;
 	}
@@ -275,6 +319,10 @@ public class TransactionPanel extends JPanel {
 
 	public FilterOptions getFilterOptions() {
 		return filters;
+	}
+
+	public App getApp() {
+		return app;
 	}
 
 	public class TreeMeta {
