@@ -16,11 +16,13 @@
 "transaction.output":"Output",
 "transaction.pending":"Pending",
 "transaction.done":"Done",
+"transaction.planned":"Planned",
 "menu.transaction":"Transaction",
 "meta.amount":"Amount",
 "meta.count":"Count",
 "meta.input":"Inputs",
 "meta.output":"Outputs",
 "meta.pending":"Pending",
-"meta.done":"Done"
+"meta.done":"Done",
+"meta.planned":"Planned"
 }

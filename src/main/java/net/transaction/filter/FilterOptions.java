@@ -7,24 +7,27 @@ import java.util.stream.Collectors;
 import net.account.Account;
 import net.app.App;
 import net.category.Category;
-import net.transaction.Transaction;
+import net.transaction.TransactionState;
 
 public class FilterOptions {
 
 	private Vector<Category> categories;
 	private Vector<Account> accounts;
 	private Vector<String> locations;
-	private Vector<Transaction> transactions;
+	private Vector<TransactionState> states;
 
 	public FilterOptions(FilterDialog dialog) {
 		if (dialog.getCategoryTab().isOn()) {
-			categories = dialog.getCategoryTab().getAllowedCategories();
+			categories = dialog.getCategoryTab().getAllowedValues();
 		}
 		if (dialog.getAccountTab().isOn()) {
-			accounts = dialog.getAccountTab().getAllowedAccount();
+			accounts = dialog.getAccountTab().getAllowedValues();
 		}
 		if (dialog.getLocationTab().isOn()) {
-			locations = dialog.getLocationTab().getAllowedLocations();
+			locations = dialog.getLocationTab().getAllowedValues();
+		}
+		if (dialog.getStateTab().isOn()) {
+			states = dialog.getStateTab().getAllowedValues();
 		}
 	}
 
@@ -52,9 +55,9 @@ public class FilterOptions {
 			options.add("location IN " + locations.stream().collect(Collectors.joining("\",\"", "(\"", "\")")));
 		}
 
-		if (transactions != null) {
-			options.add("id IN "
-					+ transactions.stream().map(tran -> tran.getId() + "").collect(Collectors.joining(",", "(", ")")));
+		if (states != null) {
+			options.add("state IN " + states.stream().map(state -> state.name().toLowerCase())
+					.collect(Collectors.joining("\",\"", "(\"", "\")")));
 		}
 
 		if (options.size() > 0) {
@@ -75,6 +78,10 @@ public class FilterOptions {
 
 	public Vector<String> getAllowedLocations() {
 		return locations;
+	}
+	
+	public Vector<TransactionState> getAllowedStates(){
+		return states;
 	}
 
 }

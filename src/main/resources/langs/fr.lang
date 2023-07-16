@@ -16,11 +16,13 @@
 "transaction.output":"Sortie",
 "transaction.pending":"En attente",
 "transaction.done":"Validée",
+"transaction.planned":"Planifiée",
 "menu.transaction":"Transaction",
 "meta.amount":"Total",
 "meta.count":"Décompte",
 "meta.input":"Entrées",
 "meta.output":"Sorties",
 "meta.pending":"En attente",
-"meta.done":"Validée"
+"meta.done":"Validée",
+"meta.planned":"Planifiée"
 }

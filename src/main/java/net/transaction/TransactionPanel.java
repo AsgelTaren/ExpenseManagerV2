@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.StringJoiner;
 import java.util.Vector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -199,11 +200,7 @@ public class TransactionPanel extends JPanel implements KeyListener {
 			} else {
 				target.inputs++;
 			}
-			if (trans.isDone()) {
-				target.done++;
-			} else {
-				target.pending++;
-			}
+			target.states[trans.getState().ordinal()]++;
 		}
 
 		for (Entry<Integer, Category> entry : model.getCategoriesMap().entrySet()) {
@@ -242,11 +239,7 @@ public class TransactionPanel extends JPanel implements KeyListener {
 			} else {
 				target.inputs++;
 			}
-			if (trans.isDone()) {
-				target.done++;
-			} else {
-				target.pending++;
-			}
+			target.states[trans.getState().ordinal()]++;
 		}
 
 		for (Entry<Integer, Account> entry : model.getAccountsMap().entrySet()) {
@@ -327,16 +320,21 @@ public class TransactionPanel extends JPanel implements KeyListener {
 
 	public class TreeMeta {
 
-		public static final String[] KEYS = new String[] { "amount", "count", "input", "output", "pending", "done" };
-		public static final boolean[] IS_INT = new boolean[] { false, true, true, true, true, true };
+		public static final String[] KEYS = Stream
+				.concat(Arrays.stream(new String[] { "amount", "count", "input", "output" }),
+						Arrays.stream(TransactionState.values()).map(state -> state.name().toLowerCase()))
+				.toArray(i -> new String[i]);
+		public static final Boolean[] IS_INT = Stream.concat(Arrays.stream(new Boolean[] { false, true, true, true }),
+				Arrays.stream(TransactionState.values()).map(state -> true)).toArray(i -> new Boolean[i]);
 		public float amount;
 		public int count;
 		public int inputs;
 		public int outputs;
-		public int pending;
-		public int done;
+		public int[] states;
 
 		public TreeMeta() {
+			states = new int[TransactionState.values().length];
+
 		}
 	}
 
@@ -355,6 +353,9 @@ public class TransactionPanel extends JPanel implements KeyListener {
 		}
 
 		public float getValue() {
+			if (type >= 4) {
+				return meta.states[type - 4];
+			}
 			switch (type) {
 			case 0:
 				return meta.amount;
@@ -364,11 +365,6 @@ public class TransactionPanel extends JPanel implements KeyListener {
 				return meta.inputs;
 			case 3:
 				return meta.outputs;
-
-			case 4:
-				return meta.pending;
-			case 5:
-				return meta.done;
 			}
 			return -1;
 		}

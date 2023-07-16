@@ -7,8 +7,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Toolkit;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
@@ -38,7 +36,7 @@ import net.app.Utils;
 import net.category.Category;
 
 @SuppressWarnings("serial")
-public class TransactionDialog extends JDialog implements KeyListener{
+public class TransactionDialog extends JDialog {
 
 	public TransactionDialog(App app, TransactionPanel transactionPanel, Transaction transaction) {
 		super(app.getJFrame(), app.getLangAtlas().getText("menu.transaction"), true);
@@ -161,13 +159,10 @@ public class TransactionDialog extends JDialog implements KeyListener{
 		gbc.gridy = 8;
 		gbc.gridx = 1;
 		up.add(label_status, gbc);
-		JComboBox<Boolean> field_status = new JComboBox<>(new Boolean[] { true, false });
-		field_status.setRenderer(new BooleanCustomComboBoxRenderer(app.getLangAtlas().getText("transaction.done"),
-				app.getLangAtlas().getText("transaction.pending"), Color.GREEN, Color.MAGENTA,
-				app.getIconAtlas().getIcon("done", 16), app.getIconAtlas().getIcon("pending", 16)));
-		field_status.setPreferredSize(new Dimension(150, 25));
+		JComboBox<TransactionState> field_state = new JComboBox<>(TransactionState.values());
+		field_state.setRenderer(new StateComboBoxRenderer(app));
 		gbc.gridy++;
-		up.add(field_status, gbc);
+		up.add(field_state, gbc);
 
 		// Amount
 		JLabel label_amount = new JLabel("Amount");
@@ -223,7 +218,7 @@ public class TransactionDialog extends JDialog implements KeyListener{
 			field_date_creation.setText(Transaction.DATE_FORMAT.format(transaction.getDate_creation()));
 			field_date_application.setText(Transaction.DATE_FORMAT.format(transaction.getDate_application()));
 			field_type.setSelectedItem(transaction.isOutput());
-			field_status.setSelectedItem(transaction.isDone());
+			field_state.setSelectedItem(transaction.getState());
 			field_amount.setValue(transaction.getAmount());
 			field_id.setText(transaction.getId() + "");
 		}
@@ -262,14 +257,14 @@ public class TransactionDialog extends JDialog implements KeyListener{
 				transaction.setDate_application(
 						Utils.parseDate(Transaction.DATE_FORMAT, field_date_application.getText()));
 				transaction.setOutput((Boolean) field_type.getSelectedItem());
-				transaction.setDone((Boolean) field_status.getSelectedItem());
+				transaction.setState((TransactionState) field_state.getSelectedItem());
 				transaction.setAmount(((Number) field_amount.getValue()).floatValue());
 			}
 			Transaction res = transaction == null
 					? new Transaction(-1, (Account) field_account.getSelectedItem(),
 							(Category) field_category.getSelectedItem(), field_name.getText(), field_location.getText(),
 							((Number) field_amount.getValue()).floatValue(), date_creation, date_application,
-							(Boolean) field_type.getSelectedItem(), (Boolean) field_status.getSelectedItem())
+							(Boolean) field_type.getSelectedItem(), (TransactionState) field_state.getSelectedItem())
 					: transaction;
 			try {
 				res.saveIn(app.getDataBase());
@@ -318,22 +313,32 @@ public class TransactionDialog extends JDialog implements KeyListener{
 		}
 	}
 
-	@Override
-	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+	private class StateComboBoxRenderer extends BasicComboBoxRenderer {
 
-	@Override
-	public void keyPressed(KeyEvent e) {
-		System.out.println("OK");
-		
-	}
+		private ImageIcon[] icons;
+		private String[] texts;
 
-	@Override
-	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
+		private StateComboBoxRenderer(App app) {
+			icons = new ImageIcon[TransactionState.values().length];
+			texts = new String[icons.length];
+
+			for (TransactionState state : TransactionState.values()) {
+				icons[state.ordinal()] = app.getIconAtlas().getIcon(state.name().toLowerCase(), 16);
+				texts[state.ordinal()] = app.getLangAtlas().getText(state.getLocalizationName());
+			}
+		}
+
+		@Override
+		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+				boolean cellHasFocus) {
+			JLabel res = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+			if (value instanceof TransactionState state) {
+				res.setForeground(state.getColor());
+				res.setText(texts[state.ordinal()]);
+				res.setIcon(icons[state.ordinal()]);
+			}
+			return res;
+		}
 	}
 
 }

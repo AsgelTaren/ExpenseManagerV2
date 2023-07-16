@@ -28,11 +28,16 @@ public class IconAtlas {
 	}
 
 	public ImageIcon getIcon(String key, int size) {
-		return new ImageIcon(atlas.get(key).getScaledInstance(size, size, Image.SCALE_SMOOTH));
+		try {
+			return new ImageIcon(atlas.get(key).getScaledInstance(size, size, Image.SCALE_SMOOTH));
+		} catch (Exception e) {
+			System.out.println("Failed to load icon: " + key);
+			return null;
+		}
 	}
 
 	public Image getRawImage(String key, int size) {
-		return  atlas.get(key).getScaledInstance(size, size, Image.SCALE_SMOOTH);
+		return atlas.get(key).getScaledInstance(size, size, Image.SCALE_SMOOTH);
 	}
 
 }

@@ -53,7 +53,7 @@ public class TransactionTableModel extends AbstractTableModel {
 						set.getFloat("amount"),
 						Utils.parseDate(Transaction.DATE_FORMAT, set.getString("date_creation")),
 						Utils.parseDate(Transaction.DATE_FORMAT, set.getString("date_application")),
-						set.getBoolean("output"), set.getBoolean("done")));
+						set.getBoolean("output"), TransactionState.valueOf(set.getString("state").toUpperCase())));
 			}
 
 		} catch (SQLException e) {
@@ -92,7 +92,7 @@ public class TransactionTableModel extends AbstractTableModel {
 		case 7:
 			return target.isOutput();
 		case 8:
-			return new StatusHolder(target.isDone());
+			return target.getState();
 		}
 		return null;
 	}
@@ -117,7 +117,7 @@ public class TransactionTableModel extends AbstractTableModel {
 		case 7:
 			return "Type";
 		case 8:
-			return "Done";
+			return "State";
 		}
 		return null;
 	}
@@ -137,17 +137,5 @@ public class TransactionTableModel extends AbstractTableModel {
 
 	public HashMap<Integer, Account> getAccountsMap() {
 		return accounts;
-	}
-
-	public class StatusHolder {
-		private boolean done;
-
-		public StatusHolder(boolean done) {
-			this.done = done;
-		}
-
-		public boolean isDone() {
-			return done;
-		}
 	}
 }

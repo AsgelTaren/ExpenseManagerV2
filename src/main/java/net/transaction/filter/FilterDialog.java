@@ -21,6 +21,7 @@ public class FilterDialog extends JDialog {
 	private FilterCategoryTab categories;
 	private FilterAccountTab accounts;
 	private FilterLocationTab locations;
+	private FilterStateTab states;
 
 	public FilterDialog(App app, TransactionPanel transactionPanel) {
 		super(app.getJFrame(), "Filters", true);
@@ -36,8 +37,9 @@ public class FilterDialog extends JDialog {
 		tabs.setPreferredSize(new Dimension(500, 400));
 		tabs.setBorder(BorderFactory.createTitledBorder("Filtering options"));
 		tabs.addTab("Category", categories = new FilterCategoryTab(app, transactionPanel.getFilterOptions()));
-		tabs.addTab("Accounts", accounts = new FilterAccountTab(app, transactionPanel.getFilterOptions()));
+		tabs.addTab("Account", accounts = new FilterAccountTab(app, transactionPanel.getFilterOptions()));
 		tabs.addTab("Location", locations = new FilterLocationTab(app, transactionPanel.getFilterOptions()));
+		tabs.addTab("State", states = new FilterStateTab(app, transactionPanel.getFilterOptions()));
 
 		add(tabs, gbc);
 
@@ -70,6 +72,7 @@ public class FilterDialog extends JDialog {
 		categories.resetFilter();
 		accounts.resetFilter();
 		locations.resetFilter();
+		states.resetFilter();
 	}
 
 	public FilterCategoryTab getCategoryTab() {
@@ -82,6 +85,10 @@ public class FilterDialog extends JDialog {
 
 	public FilterLocationTab getLocationTab() {
 		return locations;
+	}
+
+	public FilterStateTab getStateTab() {
+		return states;
 	}
 
 }
