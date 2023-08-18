@@ -9,6 +9,9 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JTabbedPane;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.account.AccountListDialog;
 import net.category.CategoryListDialog;
 import net.graph.GraphPanel;
@@ -16,6 +19,8 @@ import net.transaction.Transaction;
 import net.transaction.TransactionPanel;
 
 public class App {
+
+	private static final Logger logger = LogManager.getLogger(App.class);
 
 	// UI
 	private JFrame frame;
@@ -36,19 +41,22 @@ public class App {
 	}
 
 	public void create() {
+		logger.info("Creating the app");
 		// Loading all icons
 		iconAtlas = new IconAtlas();
 		iconAtlas.loadIcons();
+		logger.info("Loaded icons");
 
 		langAtlas = new LangAtlas("fr");
 		langAtlas.loadLang();
+		logger.info("Loaded langs");
 
 		workZone = new HashSet<>();
 
 		// Connecting to the database
 		db = new DataBase(new File("testZone/test.db"));
 		// db = new DataBase();
-
+		logger.info("Connected to the database");
 		// UI
 		frame = new JFrame("ExpenseManagerV2");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

@@ -6,11 +6,16 @@ import java.util.HashMap;
 
 import javax.swing.ImageIcon;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class IconAtlas {
+
+	private static final Logger logger = LogManager.getLogger(IconAtlas.class);
 
 	private HashMap<String, BufferedImage> atlas = new HashMap<>();
 
@@ -23,8 +28,10 @@ public class IconAtlas {
 
 		JsonObject index = JsonParser.parseString(indexData).getAsJsonObject();
 		JsonArray iconsArray = index.get("icons").getAsJsonArray();
-		iconsArray.iterator().forEachRemaining(
-				e -> atlas.put(e.getAsString(), Utils.loadImage("icons/" + e.getAsString() + ".png")));
+		iconsArray.iterator().forEachRemaining(e -> {
+			atlas.put(e.getAsString(), Utils.loadImage("icons/" + e.getAsString() + ".png"));
+			logger.info("Loaded icon " + e.getAsString());
+		});
 	}
 
 	public ImageIcon getIcon(String key, int size) {
