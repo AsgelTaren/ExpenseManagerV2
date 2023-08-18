@@ -1,6 +1,9 @@
 package net.transaction;
 
 import java.awt.Component;
+import java.time.Year;
+import java.time.YearMonth;
+import java.util.HashMap;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -11,6 +14,7 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import net.account.Account;
 import net.app.App;
 import net.category.Category;
+import net.transaction.TransactionPanel.MetaCategory;
 import net.transaction.TransactionPanel.TreeMeta;
 import net.transaction.TransactionPanel.TreeMetaHolder;
 
@@ -20,6 +24,7 @@ public class TransactionTreeRenderer extends DefaultTreeCellRenderer {
 	private ImageIcon catClosedIcon, catOpenIcon;
 	private ImageIcon[] metaIcons;
 	private String[] metaPrefixes;
+	private HashMap<String, ImageIcon> metaCatsIcons;
 
 	public TransactionTreeRenderer(App app) {
 		super();
@@ -31,6 +36,10 @@ public class TransactionTreeRenderer extends DefaultTreeCellRenderer {
 		for (int i = 0; i < metaIcons.length; i++) {
 			metaIcons[i] = app.getIconAtlas().getIcon(TransactionPanel.TreeMeta.KEYS[i], 16);
 			metaPrefixes[i] = app.getLangAtlas().getText("meta." + TransactionPanel.TreeMeta.KEYS[i]);
+		}
+		metaCatsIcons = new HashMap<>();
+		for (String key : TransactionPanel.metaCategories.keySet()) {
+			metaCatsIcons.put(key, app.getIconAtlas().getIcon(key, 16));
 		}
 	}
 
@@ -46,8 +55,12 @@ public class TransactionTreeRenderer extends DefaultTreeCellRenderer {
 					+ "</font></nobr></html>");
 			res.setIcon(metaIcons[holder.getType()]);
 		}
-		if (target instanceof Category | target instanceof Account) {
+		if (target instanceof Category | target instanceof Account | target instanceof YearMonth
+				| target instanceof Year) {
 			res.setIcon(expanded ? catOpenIcon : catClosedIcon);
+		}
+		if (target instanceof MetaCategory cat) {
+			res.setIcon(metaCatsIcons.get(cat.id()));
 		}
 		return res;
 	}

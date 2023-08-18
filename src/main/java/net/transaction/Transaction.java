@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.Date;
 
 import net.account.Account;
@@ -14,6 +15,13 @@ public class Transaction {
 
 	public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 	public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+	public static final Comparator<Transaction> COMPARATOR = (e1, e2) -> {
+		int temp = e1.getDate_application().compareTo(e2.getDate_application());
+		if (temp == 0) {
+			return e1.getId() - e2.getId();
+		}
+		return temp;
+	};
 
 	private int id;
 	private Account account;
@@ -155,5 +163,15 @@ public class Transaction {
 
 	public void setDate_application(Date date_application) {
 		this.date_application = date_application;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		return o instanceof Transaction t ? t.id == this.id : false;
+	}
+
+	@Override
+	public int hashCode() {
+		return id;
 	}
 }

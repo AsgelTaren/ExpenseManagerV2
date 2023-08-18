@@ -1,6 +1,7 @@
 package net.app;
 
 import java.io.File;
+import java.util.HashSet;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -11,6 +12,7 @@ import javax.swing.JTabbedPane;
 import net.account.AccountListDialog;
 import net.category.CategoryListDialog;
 import net.graph.GraphPanel;
+import net.transaction.Transaction;
 import net.transaction.TransactionPanel;
 
 public class App {
@@ -27,6 +29,8 @@ public class App {
 	// DataBase
 	private DataBase db;
 
+	private HashSet<Transaction> workZone;
+
 	public App() {
 
 	}
@@ -38,6 +42,8 @@ public class App {
 
 		langAtlas = new LangAtlas("fr");
 		langAtlas.loadLang();
+
+		workZone = new HashSet<>();
 
 		// Connecting to the database
 		db = new DataBase(new File("testZone/test.db"));
@@ -105,5 +111,9 @@ public class App {
 
 	public LangAtlas getLangAtlas() {
 		return langAtlas;
+	}
+
+	public HashSet<Transaction> getWorkZone() {
+		return workZone;
 	}
 }

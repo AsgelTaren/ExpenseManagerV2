@@ -24,5 +24,10 @@
 "meta.output":"Sorties",
 "meta.pending":"En attente",
 "meta.done":"Validée",
-"meta.planned":"Planifiée"
+"meta.planned":"Planifiée",
+"meta.accounts":"Comptes",
+"meta.categories":"Catégories",
+"meta.months":"Mois",
+"meta.years":"Années",
+"meta.global":"Global"
 }

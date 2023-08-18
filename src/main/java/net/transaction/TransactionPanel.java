@@ -1,20 +1,33 @@
 package net.transaction;
 
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.SQLException;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.Vector;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.swing.BorderFactory;
+import javax.swing.DropMode;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -22,12 +35,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
-import net.account.Account;
 import net.app.App;
-import net.category.Category;
 import net.transaction.filter.FilterDialog;
 import net.transaction.filter.FilterOptions;
 
@@ -36,13 +49,26 @@ public class TransactionPanel extends JPanel implements KeyListener {
 
 	private App app;
 
-	private JTable table;
+	private JTable table, workTable;
 	private TransactionTableModel model;
+	private TransactionWorkZoneModel workZoneModel;
 	private JToolBar toolbar;
-	private JTree categoryTree, accountTree;
+	private JTree queryTree, workTree;
 	private TransactionTransferHandler transferHandler;
 
 	private FilterOptions filters;
+
+	public static final LinkedHashMap<String, Function<Transaction, Object>> metaCategories = new LinkedHashMap<>();
+	static {
+		String global = "Global";
+		metaCategories.put("categories", trans -> trans.getCategory());
+		metaCategories.put("accounts", trans -> trans.getAccount());
+		metaCategories.put("months", trans -> YearMonth
+				.from(trans.getDate_application().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()));
+		metaCategories.put("years", trans -> Year
+				.from(trans.getDate_application().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()));
+		metaCategories.put("global", trans -> global);
+	}
 
 	public TransactionPanel(App app) {
 		super();
@@ -70,28 +96,69 @@ public class TransactionPanel extends JPanel implements KeyListener {
 		table.addKeyListener(this);
 		table.setTransferHandler(transferHandler);
 		table.setDragEnabled(true);
+		table.addMouseListener(new MouseAdapter() {
+
+			public void mousePressed(MouseEvent e) {
+				if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
+					editSelection();
+				}
+			}
+		});
 
 		JPanel queryPanel = new JPanel();
 		queryPanel.setBorder(BorderFactory.createTitledBorder("Query results"));
 		queryPanel.setLayout(new GridBagLayout());
 		gbc.gridy = 0;
-		gbc.gridwidth = 2;
+		gbc.gridwidth = 3;
 		gbc.insets = new Insets(5, 5, 5, 5);
 		queryPanel.add(new JScrollPane(table), gbc);
 
-		categoryTree = new JTree();
-		categoryTree.setCellRenderer(new TransactionTreeRenderer(app));
-		categoryTree.setTransferHandler(transferHandler);
+		queryTree = new JTree();
+		queryTree.setCellRenderer(new TransactionTreeRenderer(app));
+		queryTree.setTransferHandler(transferHandler);
 		gbc.gridy = 1;
 		gbc.gridwidth = 1;
 		gbc.weightx = 1;
-		queryPanel.add(new JScrollPane(categoryTree), gbc);
+		queryPanel.add(new JScrollPane(queryTree), gbc);
 
-		accountTree = new JTree();
-		accountTree.setCellRenderer(new TransactionTreeRenderer(app));
-		accountTree.setTransferHandler(transferHandler);
+		workTree = new JTree();
+		workTree.setCellRenderer(new TransactionTreeRenderer(app));
+		workTree.setTransferHandler(transferHandler);
 		gbc.gridx = 1;
-		queryPanel.add(new JScrollPane(accountTree), gbc);
+		queryPanel.add(new JScrollPane(workTree), gbc);
+
+		workZoneModel = new TransactionWorkZoneModel(app);
+		workTable = new JTable(workZoneModel);
+		workTable.setDefaultRenderer(String.class, new TransactionTableRenderer(app));
+		workTable.setDragEnabled(true);
+		workTable.setTransferHandler(new TransactionWorkZoneTransferHandler(this));
+		workTable.setDropMode(DropMode.INSERT_ROWS);
+		workTable.setFillsViewportHeight(true);
+		workTable.addKeyListener(new KeyAdapter() {
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+					for (int i : workTable.getSelectedRows()) {
+						app.getWorkZone().remove(workZoneModel.getTransactions().get(i));
+					}
+					refreshWorkTable();
+				}
+			}
+
+		});
+		workTable.addMouseListener(new MouseAdapter() {
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
+					editSelectionInWorkZone();
+				}
+			}
+		});
+		gbc.gridx = 2;
+		gbc.weightx = 3;
+		queryPanel.add(new JScrollPane(workTable), gbc);
 
 		gbc.weightx = gbc.weighty = 1;
 		gbc.gridwidth = gbc.gridheight = 1;
@@ -100,8 +167,8 @@ public class TransactionPanel extends JPanel implements KeyListener {
 		add(queryPanel, gbc);
 
 		model.query(filters.createRequest(app));
-		updateCategoryTree();
-		updateAccountTree();
+		updateTree();
+		refreshWorkTable();
 	}
 
 	private void createToolBar() {
@@ -147,13 +214,23 @@ public class TransactionPanel extends JPanel implements KeyListener {
 
 	private void editSelection() {
 		int[] selection = table.getSelectedRows();
-		if (selection.length == 1) {
-			TransactionDialog dialog = new TransactionDialog(app, this, model.getTransactions().get(selection[0]));
+		edit(Arrays.stream(selection).<Transaction>mapToObj(index -> model.getTransactions().get(index))
+				.collect(Collectors.toCollection(Vector::new)));
+	}
+
+	private void editSelectionInWorkZone() {
+		int[] selection = workTable.getSelectedRows();
+		edit(Arrays.stream(selection).<Transaction>mapToObj(index -> workZoneModel.getTransactions().get(index))
+				.collect(Collectors.toCollection(Vector::new)));
+	}
+
+	private void edit(List<Transaction> transactions) {
+		if (transactions.size() == 1) {
+			TransactionDialog dialog = new TransactionDialog(app, this, transactions.get(0));
 			dialog.setVisible(true);
 		} else {
 			TransactionMultipleSelectionDialog dialog = new TransactionMultipleSelectionDialog(app, this,
-					Arrays.stream(selection).<Transaction>mapToObj(index -> model.getTransactions().get(index))
-							.collect(Collectors.toCollection(Vector::new)));
+					new Vector<>(transactions));
 			dialog.setVisible(true);
 		}
 	}
@@ -184,15 +261,18 @@ public class TransactionPanel extends JPanel implements KeyListener {
 		}
 	}
 
-	private void updateCategoryTree() {
-		DefaultMutableTreeNode root = new DefaultMutableTreeNode("Categories");
-		HashMap<Category, TreeMeta> meta = new HashMap<>();
-		for (Entry<Integer, Category> entry : model.getCategoriesMap().entrySet()) {
-			meta.put(entry.getValue(), new TreeMeta());
+	private DefaultMutableTreeNode createMetaNode(String id, List<Transaction> transactions,
+			Function<Transaction, Object> separator) {
+		DefaultMutableTreeNode result = new DefaultMutableTreeNode(
+				new MetaCategory(id, app.getLangAtlas().getText("meta." + id)));
+		HashMap<Object, TreeMeta> metas = new HashMap<>();
+		Set<Object> keys = transactions.stream().map(separator).collect(Collectors.toSet());
+		for (Object key : keys) {
+			metas.put(key, new TreeMeta());
 		}
 
-		for (Transaction trans : model.getTransactions()) {
-			TreeMeta target = meta.get(trans.getCategory());
+		for (Transaction trans : transactions) {
+			TreeMeta target = metas.get(separator.apply(trans));
 			target.amount = target.amount + (trans.isOutput() ? -trans.getAmount() : trans.getAmount());
 			target.count++;
 			if (trans.isOutput()) {
@@ -203,63 +283,32 @@ public class TransactionPanel extends JPanel implements KeyListener {
 			target.states[trans.getState().ordinal()]++;
 		}
 
-		for (Entry<Integer, Category> entry : model.getCategoriesMap().entrySet()) {
-			TreeMeta target = meta.get(entry.getValue());
+		for (Object key : keys) {
+			TreeMeta target = metas.get(key);
 			if (target.count > 0) {
-				DefaultMutableTreeNode catNode = new DefaultMutableTreeNode(entry.getValue());
+				DefaultMutableTreeNode catNode = new DefaultMutableTreeNode(key);
 
 				for (int i = 0; i < TreeMeta.KEYS.length; i++) {
 					DefaultMutableTreeNode metaNode = new DefaultMutableTreeNode(new TreeMetaHolder(target, i));
 					catNode.add(metaNode);
 				}
 
-				root.add(catNode);
+				result.add(catNode);
 			}
 		}
 
-		((DefaultTreeModel) categoryTree.getModel()).setRoot(root);
-		categoryTree.treeDidChange();
-		categoryTree.revalidate();
-		categoryTree.repaint();
+		return result;
 	}
 
-	private void updateAccountTree() {
-		DefaultMutableTreeNode root = new DefaultMutableTreeNode("Accounts");
-		HashMap<Account, TreeMeta> meta = new HashMap<>();
-		for (Entry<Integer, Account> entry : model.getAccountsMap().entrySet()) {
-			meta.put(entry.getValue(), new TreeMeta());
+	private void updateTree() {
+		DefaultMutableTreeNode global = new DefaultMutableTreeNode("Data");
+		for (Entry<String, Function<Transaction, Object>> entry : metaCategories.entrySet()) {
+			global.add(createMetaNode(entry.getKey(), model.getTransactions(), entry.getValue()));
 		}
-
-		for (Transaction trans : model.getTransactions()) {
-			TreeMeta target = meta.get(trans.getAccount());
-			target.amount = target.amount + (trans.isOutput() ? -trans.getAmount() : trans.getAmount());
-			target.count++;
-			if (trans.isOutput()) {
-				target.outputs++;
-			} else {
-				target.inputs++;
-			}
-			target.states[trans.getState().ordinal()]++;
-		}
-
-		for (Entry<Integer, Account> entry : model.getAccountsMap().entrySet()) {
-			TreeMeta target = meta.get(entry.getValue());
-			if (target.count > 0) {
-				DefaultMutableTreeNode catNode = new DefaultMutableTreeNode(entry.getValue());
-
-				for (int i = 0; i < TreeMeta.KEYS.length; i++) {
-					DefaultMutableTreeNode metaNode = new DefaultMutableTreeNode(new TreeMetaHolder(target, i));
-					catNode.add(metaNode);
-				}
-
-				root.add(catNode);
-			}
-		}
-
-		((DefaultTreeModel) accountTree.getModel()).setRoot(root);
-		accountTree.treeDidChange();
-		accountTree.revalidate();
-		accountTree.repaint();
+		((DefaultTreeModel) queryTree.getModel()).setRoot(global);
+		queryTree.treeDidChange();
+		queryTree.revalidate();
+		queryTree.repaint();
 	}
 
 	private void selectionChanged() {
@@ -270,16 +319,42 @@ public class TransactionPanel extends JPanel implements KeyListener {
 
 	public void refreshTable() {
 		model.query(filters.createRequest(app));
+		toolbar.getComponent(3).setForeground(filters.isEmpty() ? UIManager.getColor("Label.foreground") : Color.GREEN);
+		toolbar.getComponent(3).setFont(filters.isEmpty() ? UIManager.getFont("Label.font")
+				: UIManager.getFont("Label.font").deriveFont(Font.BOLD));
+		toolbar.repaint();
 		table.revalidate();
 		table.repaint();
-		updateCategoryTree();
-		updateAccountTree();
+		updateTree();
+	}
+
+	public void refreshWorkTable() {
+		workZoneModel.refresh();
+		workTable.revalidate();
+		workTable.repaint();
+
+		DefaultMutableTreeNode global = new DefaultMutableTreeNode("Data in work zone");
+		for (Entry<String, Function<Transaction, Object>> entry : metaCategories.entrySet()) {
+			global.add(createMetaNode(entry.getKey(), workZoneModel.getTransactions(), entry.getValue()));
+		}
+		((DefaultTreeModel) workTree.getModel()).setRoot(global);
+		workTree.treeDidChange();
+		workTree.revalidate();
+		workTree.repaint();
 	}
 
 	public Vector<Transaction> getSelectedTransactions() {
 		Vector<Transaction> res = new Vector<>();
 		for (int i : table.getSelectedRows()) {
 			res.add(model.getTransactions().get(i));
+		}
+		return res;
+	}
+
+	public Vector<Transaction> getSelectedTransactionsInWorkZone() {
+		Vector<Transaction> res = new Vector<>();
+		for (int i : workTable.getSelectedRows()) {
+			res.add(workZoneModel.getTransactions().get(i));
 		}
 		return res;
 	}
@@ -316,6 +391,14 @@ public class TransactionPanel extends JPanel implements KeyListener {
 
 	public App getApp() {
 		return app;
+	}
+
+	public TransactionWorkZoneModel getWorkZoneModel() {
+		return workZoneModel;
+	}
+
+	public JTable getWorkTable() {
+		return workTable;
 	}
 
 	public class TreeMeta {
@@ -369,6 +452,13 @@ public class TransactionPanel extends JPanel implements KeyListener {
 			return -1;
 		}
 
+	}
+
+	public record MetaCategory(String id, String name) {
+		@Override
+		public String toString() {
+			return name;
+		}
 	}
 
 }

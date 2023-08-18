@@ -7,16 +7,20 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Vector;
 
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
@@ -25,6 +29,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
@@ -269,12 +274,26 @@ public class TransactionDialog extends JDialog {
 			try {
 				res.saveIn(app.getDataBase());
 				transactionPanel.refreshTable();
+				transactionPanel.refreshWorkTable();
 				setVisible(false);
 				dispose();
 			} catch (SQLException err) {
 				err.printStackTrace();
 				JOptionPane.showMessageDialog(app.getJFrame(), "Unable to create new transaction", "Error",
 						JOptionPane.ERROR_MESSAGE);
+			}
+		});
+
+		// Adding escape keystroke
+		getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+				"close");
+		getRootPane().getActionMap().put("close", new AbstractAction() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setVisible(false);
+				dispose();
+
 			}
 		});
 

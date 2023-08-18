@@ -83,5 +83,9 @@ public class FilterOptions {
 	public Vector<TransactionState> getAllowedStates(){
 		return states;
 	}
+	
+	public boolean isEmpty() {
+		return locations == null && categories == null && accounts == null && states == null;
+	}
 
 }

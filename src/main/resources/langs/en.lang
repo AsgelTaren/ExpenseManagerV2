@@ -24,5 +24,10 @@
 "meta.output":"Outputs",
 "meta.pending":"Pending",
 "meta.done":"Done",
-"meta.planned":"Planned"
+"meta.planned":"Planned",
+"meta.accounts":"Accounts",
+"meta.categories":"Categories",
+"meta.months":"Months",
+"meta.years":"Years",
+"meta.global":"Global"
 }

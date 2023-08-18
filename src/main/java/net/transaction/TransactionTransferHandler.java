@@ -1,6 +1,5 @@
 package net.transaction;
 
-import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
@@ -21,8 +20,6 @@ import net.category.Category;
 @SuppressWarnings("serial")
 public class TransactionTransferHandler extends TransferHandler {
 
-	public static final DataFlavor TRANSACTION_FLAVOR = new DataFlavor(Transaction.class, "Transaction Data Flavor");
-
 	private TransactionPanel panel;
 
 	public TransactionTransferHandler(TransactionPanel panel) {
@@ -41,13 +38,15 @@ public class TransactionTransferHandler extends TransferHandler {
 		return null;
 	}
 
+	@Override
 	public int getSourceActions(JComponent c) {
 		return MOVE;
 	}
 
 	@Override
 	public boolean canImport(TransferSupport support) {
-		if (support.getComponent() instanceof JTable || !support.isDataFlavorSupported(TRANSACTION_FLAVOR)
+		if (support.getComponent() instanceof JTable
+				|| !support.isDataFlavorSupported(TransactionTransferable.TRANSACTION_FLAVOR)
 				|| !(support.getComponent() instanceof JTree)) {
 			return false;
 		}
@@ -75,7 +74,7 @@ public class TransactionTransferHandler extends TransferHandler {
 				.getLastPathComponent()).getUserObject();
 		try {
 			Vector<Transaction> data = (Vector<Transaction>) support.getTransferable()
-					.getTransferData(TRANSACTION_FLAVOR);
+					.getTransferData(TransactionTransferable.TRANSACTION_FLAVOR);
 			if (target instanceof Category cat) {
 				for (Transaction t : data) {
 					t.setCategory(cat);
@@ -97,34 +96,6 @@ public class TransactionTransferHandler extends TransferHandler {
 			e.printStackTrace();
 		}
 		return false;
-	}
-
-	private class TransactionTransferable implements Transferable {
-
-		private List<Transaction> data;
-
-		public TransactionTransferable(List<Transaction> data) {
-			this.data = data;
-		}
-
-		@Override
-		public DataFlavor[] getTransferDataFlavors() {
-			return new DataFlavor[] { TRANSACTION_FLAVOR };
-		}
-
-		@Override
-		public boolean isDataFlavorSupported(DataFlavor flavor) {
-			return TRANSACTION_FLAVOR.equals(flavor);
-		}
-
-		@Override
-		public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
-			if (!TRANSACTION_FLAVOR.equals(flavor)) {
-				throw new UnsupportedFlavorException(flavor);
-			}
-			return data;
-		}
-
 	}
 
 }
