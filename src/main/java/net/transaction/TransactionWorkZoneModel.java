@@ -7,7 +7,7 @@ import javax.swing.table.AbstractTableModel;
 import net.app.App;
 
 @SuppressWarnings("serial")
-public class TransactionWorkZoneModel extends AbstractTableModel {
+public class TransactionWorkZoneModel extends AbstractTableModel implements TransactionProvider {
 
 	private App app;
 	private ArrayList<Transaction> transactions;

@@ -11,21 +11,12 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
-import java.time.Year;
-import java.time.YearMonth;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.StringJoiner;
 import java.util.Vector;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.swing.BorderFactory;
 import javax.swing.DropMode;
@@ -35,11 +26,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
-import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
 
 import net.app.App;
 import net.app.WorkablePanel;
@@ -55,22 +43,10 @@ public class TransactionPanel extends JPanel implements KeyListener, WorkablePan
 	private TransactionTableModel model;
 	private TransactionWorkZoneModel workZoneModel;
 	private JToolBar toolbar;
-	private JTree queryTree, workTree;
+	private TransactionTree queryTree, workTree;
 	private TransactionTransferHandler transferHandler;
 
 	private FilterOptions filters;
-
-	public static final LinkedHashMap<String, Function<Transaction, Object>> metaCategories = new LinkedHashMap<>();
-	static {
-		String global = "Global";
-		metaCategories.put("categories", trans -> trans.getCategory());
-		metaCategories.put("accounts", trans -> trans.getAccount());
-		metaCategories.put("months", trans -> YearMonth
-				.from(trans.getDate_application().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()));
-		metaCategories.put("years", trans -> Year
-				.from(trans.getDate_application().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()));
-		metaCategories.put("global", trans -> global);
-	}
 
 	public TransactionPanel(App app) {
 		super();
@@ -115,8 +91,7 @@ public class TransactionPanel extends JPanel implements KeyListener, WorkablePan
 		gbc.insets = new Insets(5, 5, 5, 5);
 		queryPanel.add(new JScrollPane(table), gbc);
 
-		queryTree = new JTree();
-		queryTree.setCellRenderer(new TransactionTreeRenderer(app));
+		queryTree = new TransactionTree(app, model);
 		queryTree.setTransferHandler(transferHandler);
 		gbc.gridy = 1;
 		gbc.gridwidth = 1;
@@ -125,14 +100,13 @@ public class TransactionPanel extends JPanel implements KeyListener, WorkablePan
 
 		JPanel workZone = new JPanel();
 		workZone.setLayout(new GridBagLayout());
-		workTree = new JTree();
-		workTree.setCellRenderer(new TransactionTreeRenderer(app));
+		workZoneModel = new TransactionWorkZoneModel(app);
+		workTree = new TransactionTree(app, workZoneModel);
 		workTree.setTransferHandler(transferHandler);
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		workZone.add(new JScrollPane(workTree), gbc);
 
-		workZoneModel = new TransactionWorkZoneModel(app);
 		workTable = new JTable(workZoneModel);
 		workTable.setDefaultRenderer(String.class, new TransactionTableRenderer(app));
 		workTable.setDragEnabled(true);
@@ -178,7 +152,7 @@ public class TransactionPanel extends JPanel implements KeyListener, WorkablePan
 		add(queryPanel, gbc);
 
 		model.query(filters.createRequest(app));
-		updateTree();
+		queryTree.updateTree();
 		refreshWorkTable();
 	}
 
@@ -272,56 +246,6 @@ public class TransactionPanel extends JPanel implements KeyListener, WorkablePan
 		}
 	}
 
-	private DefaultMutableTreeNode createMetaNode(String id, List<Transaction> transactions,
-			Function<Transaction, Object> separator) {
-		DefaultMutableTreeNode result = new DefaultMutableTreeNode(
-				new MetaCategory(id, app.getLangAtlas().getText("meta." + id)));
-		HashMap<Object, TreeMeta> metas = new HashMap<>();
-		Set<Object> keys = transactions.stream().map(separator).collect(Collectors.toSet());
-		for (Object key : keys) {
-			metas.put(key, new TreeMeta());
-		}
-
-		for (Transaction trans : transactions) {
-			TreeMeta target = metas.get(separator.apply(trans));
-			target.amount = target.amount + (trans.isOutput() ? -trans.getAmount() : trans.getAmount());
-			target.count++;
-			if (trans.isOutput()) {
-				target.outputs++;
-			} else {
-				target.inputs++;
-			}
-			target.states[trans.getState().ordinal()]++;
-		}
-
-		for (Object key : keys) {
-			TreeMeta target = metas.get(key);
-			if (target.count > 0) {
-				DefaultMutableTreeNode catNode = new DefaultMutableTreeNode(key);
-
-				for (int i = 0; i < TreeMeta.KEYS.length; i++) {
-					DefaultMutableTreeNode metaNode = new DefaultMutableTreeNode(new TreeMetaHolder(target, i));
-					catNode.add(metaNode);
-				}
-
-				result.add(catNode);
-			}
-		}
-
-		return result;
-	}
-
-	private void updateTree() {
-		DefaultMutableTreeNode global = new DefaultMutableTreeNode("Data");
-		for (Entry<String, Function<Transaction, Object>> entry : metaCategories.entrySet()) {
-			global.add(createMetaNode(entry.getKey(), model.getTransactions(), entry.getValue()));
-		}
-		((DefaultTreeModel) queryTree.getModel()).setRoot(global);
-		queryTree.treeDidChange();
-		queryTree.revalidate();
-		queryTree.repaint();
-	}
-
 	private void selectionChanged() {
 		boolean selection = table.getSelectedColumn() != -1;
 		toolbar.getComponent(1).setEnabled(selection);
@@ -336,22 +260,14 @@ public class TransactionPanel extends JPanel implements KeyListener, WorkablePan
 		toolbar.repaint();
 		table.revalidate();
 		table.repaint();
-		updateTree();
+		queryTree.updateTree();
 	}
 
 	public void refreshWorkTable() {
 		workZoneModel.refresh();
 		workTable.revalidate();
 		workTable.repaint();
-
-		DefaultMutableTreeNode global = new DefaultMutableTreeNode("Data in work zone");
-		for (Entry<String, Function<Transaction, Object>> entry : metaCategories.entrySet()) {
-			global.add(createMetaNode(entry.getKey(), workZoneModel.getTransactions(), entry.getValue()));
-		}
-		((DefaultTreeModel) workTree.getModel()).setRoot(global);
-		workTree.treeDidChange();
-		workTree.revalidate();
-		workTree.repaint();
+		workTree.updateTree();
 	}
 
 	public Vector<Transaction> getSelectedTransactions() {
@@ -410,59 +326,6 @@ public class TransactionPanel extends JPanel implements KeyListener, WorkablePan
 
 	public JTable getWorkTable() {
 		return workTable;
-	}
-
-	public class TreeMeta {
-
-		public static final String[] KEYS = Stream
-				.concat(Arrays.stream(new String[] { "amount", "count", "input", "output" }),
-						Arrays.stream(TransactionState.values()).map(state -> state.name().toLowerCase()))
-				.toArray(i -> new String[i]);
-		public static final Boolean[] IS_INT = Stream.concat(Arrays.stream(new Boolean[] { false, true, true, true }),
-				Arrays.stream(TransactionState.values()).map(state -> true)).toArray(i -> new Boolean[i]);
-		public float amount;
-		public int count;
-		public int inputs;
-		public int outputs;
-		public int[] states;
-
-		public TreeMeta() {
-			states = new int[TransactionState.values().length];
-
-		}
-	}
-
-	public class TreeMetaHolder {
-
-		private TreeMeta meta;
-		private int type;
-
-		public TreeMetaHolder(TreeMeta meta, int type) {
-			this.meta = meta;
-			this.type = type;
-		}
-
-		public int getType() {
-			return type;
-		}
-
-		public float getValue() {
-			if (type >= 4) {
-				return meta.states[type - 4];
-			}
-			switch (type) {
-			case 0:
-				return meta.amount;
-			case 1:
-				return meta.count;
-			case 2:
-				return meta.inputs;
-			case 3:
-				return meta.outputs;
-			}
-			return -1;
-		}
-
 	}
 
 	public record MetaCategory(String id, String name) {

@@ -13,10 +13,11 @@ import net.app.App;
 import net.app.Utils;
 import net.category.Category;
 import net.transaction.Transaction;
+import net.transaction.TransactionProvider;
 import net.transaction.TransactionState;
 
 @SuppressWarnings("serial")
-public class FolderTableModel extends AbstractTableModel {
+public class FolderTableModel extends AbstractTableModel implements TransactionProvider {
 	private App app;
 	private int folder;
 	private ArrayList<Transaction> transactions;
@@ -139,7 +140,7 @@ public class FolderTableModel extends AbstractTableModel {
 		return String.class;
 	}
 
-	public ArrayList<Transaction> getTransactions(){
+	public ArrayList<Transaction> getTransactions() {
 		return transactions;
 	}
 }

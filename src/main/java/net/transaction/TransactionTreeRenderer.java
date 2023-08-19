@@ -15,8 +15,8 @@ import net.account.Account;
 import net.app.App;
 import net.category.Category;
 import net.transaction.TransactionPanel.MetaCategory;
-import net.transaction.TransactionPanel.TreeMeta;
-import net.transaction.TransactionPanel.TreeMetaHolder;
+import net.transaction.TransactionTree.TreeMeta;
+import net.transaction.TransactionTree.TreeMetaHolder;
 
 @SuppressWarnings("serial")
 public class TransactionTreeRenderer extends DefaultTreeCellRenderer {
@@ -31,14 +31,14 @@ public class TransactionTreeRenderer extends DefaultTreeCellRenderer {
 		catClosedIcon = app.getIconAtlas().getIcon("cat-closed", 16);
 		catOpenIcon = app.getIconAtlas().getIcon("cat-open", 16);
 
-		metaIcons = new ImageIcon[TransactionPanel.TreeMeta.KEYS.length];
+		metaIcons = new ImageIcon[TreeMeta.KEYS.length];
 		metaPrefixes = new String[metaIcons.length];
 		for (int i = 0; i < metaIcons.length; i++) {
-			metaIcons[i] = app.getIconAtlas().getIcon(TransactionPanel.TreeMeta.KEYS[i], 16);
-			metaPrefixes[i] = app.getLangAtlas().getText("meta." + TransactionPanel.TreeMeta.KEYS[i]);
+			metaIcons[i] = app.getIconAtlas().getIcon(TreeMeta.KEYS[i], 16);
+			metaPrefixes[i] = app.getLangAtlas().getText("meta." + TreeMeta.KEYS[i]);
 		}
 		metaCatsIcons = new HashMap<>();
-		for (String key : TransactionPanel.metaCategories.keySet()) {
+		for (String key : TransactionTree.metaCategories.keySet()) {
 			metaCatsIcons.put(key, app.getIconAtlas().getIcon(key, 16));
 		}
 	}

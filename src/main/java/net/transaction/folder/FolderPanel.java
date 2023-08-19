@@ -25,6 +25,7 @@ import net.app.App;
 import net.app.WorkablePanel;
 import net.transaction.Transaction;
 import net.transaction.TransactionTableRenderer;
+import net.transaction.TransactionTree;
 import net.transaction.TransactionWorkZoneModel;
 import net.transaction.TransactionWorkZoneTransferHandler;
 
@@ -39,6 +40,7 @@ public class FolderPanel extends JPanel implements WorkablePanel {
 	private JTable table, workTable;
 	private FolderTableModel tableModel;
 	private TransactionWorkZoneModel workZoneModel;
+	private TransactionTree tree;
 
 	public FolderPanel(App app) {
 		super();
@@ -108,6 +110,10 @@ public class FolderPanel extends JPanel implements WorkablePanel {
 		gbc.weightx = 3;
 		add(new JScrollPane(table), gbc);
 
+		tree = new TransactionTree(app, tableModel);
+		gbc.gridx++;
+		add(new JScrollPane(tree), gbc);
+
 		workZoneModel = new TransactionWorkZoneModel(app);
 		workTable = new JTable(workZoneModel);
 		workTable.setFillsViewportHeight(true);
@@ -116,7 +122,7 @@ public class FolderPanel extends JPanel implements WorkablePanel {
 		workTable.setDefaultRenderer(String.class, new TransactionTableRenderer(app));
 		workTable.setDropMode(DropMode.INSERT_ROWS);
 		gbc.gridx = 0;
-		gbc.gridwidth = 2;
+		gbc.gridwidth = 3;
 		gbc.weightx = 1;
 		gbc.gridy = 2;
 		add(new JScrollPane(workTable), gbc);
@@ -125,14 +131,20 @@ public class FolderPanel extends JPanel implements WorkablePanel {
 			if (list.getSelectedIndex() != -1) {
 				tableModel.setFolder(listModel.getFolders().get(list.getSelectedIndex()).getID());
 				refreshTable();
+				tree.updateTree(listModel.getFolders().get(list.getSelectedIndex()).getName());
+			} else {
+				tableModel.setFolder(0);
 			}
 			toolbar.getComponent(1).setEnabled(list.getSelectedIndex() != -1);
 			toolbar.getComponent(2).setEnabled(list.getSelectedIndex() != -1);
 			table.setEnabled(list.getSelectedIndex() != -1);
+			tableModel.query();
+			tree.updateTree();
 		});
 
 		refreshList();
 		refreshTable();
+		tree.updateTree();
 	}
 
 	private void createToolBar() {
@@ -161,6 +173,9 @@ public class FolderPanel extends JPanel implements WorkablePanel {
 				if (choice == JOptionPane.YES_OPTION) {
 					try {
 						target.removeFrom(app.getDataBase());
+						list.clearSelection();
+						table.clearSelection();
+						tree.clearSelection();
 						refreshList();
 					} catch (SQLException e1) {
 						JOptionPane.showMessageDialog(app.getJFrame(),
@@ -185,6 +200,7 @@ public class FolderPanel extends JPanel implements WorkablePanel {
 		tableModel.query();
 		table.revalidate();
 		table.repaint();
+		tree.updateTree();
 	}
 
 	public void newFolderDialog() {

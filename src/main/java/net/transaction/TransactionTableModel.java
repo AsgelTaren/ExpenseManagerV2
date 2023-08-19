@@ -14,7 +14,7 @@ import net.app.Utils;
 import net.category.Category;
 
 @SuppressWarnings("serial")
-public class TransactionTableModel extends AbstractTableModel {
+public class TransactionTableModel extends AbstractTableModel implements TransactionProvider {
 
 	private App app;
 
