@@ -17,6 +17,7 @@ import net.category.CategoryListDialog;
 import net.graph.GraphPanel;
 import net.transaction.Transaction;
 import net.transaction.TransactionPanel;
+import net.transaction.folder.FolderPanel;
 
 public class App {
 
@@ -67,7 +68,15 @@ public class App {
 
 		// Tabs
 		tabs = new JTabbedPane();
-		tabs.addTab("Transactions", new TransactionPanel(this));
+		JTabbedPane dataTabs = new JTabbedPane();
+		dataTabs.addTab("Transactions", new TransactionPanel(this));
+		dataTabs.addTab("Folders", new FolderPanel(this));
+		dataTabs.addChangeListener(e -> {
+			if (dataTabs.getSelectedComponent() instanceof FolderPanel panel) {
+				panel.onFocus();
+			}
+		});
+		tabs.addTab("Data", dataTabs);
 		tabs.addTab("Graphs", new GraphPanel(this));
 		tabs.addChangeListener(e -> {
 			if (tabs.getSelectedComponent() instanceof Refreshable r) {

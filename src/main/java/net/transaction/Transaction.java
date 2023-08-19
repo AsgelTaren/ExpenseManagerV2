@@ -10,6 +10,7 @@ import java.util.Date;
 import net.account.Account;
 import net.app.DataBase;
 import net.category.Category;
+import net.transaction.folder.Folder;
 
 public class Transaction {
 
@@ -83,6 +84,22 @@ public class Transaction {
 		} else {
 			updateIn(db);
 		}
+	}
+
+	public void addToFolder(DataBase db, Folder folder) throws SQLException {
+		PreparedStatement st = db.getConnection()
+				.prepareStatement("insert into folderMemberships (folder_id,transaction_id) values (?,?);");
+		st.setInt(1, folder.getID());
+		st.setInt(2, this.id);
+		st.executeUpdate();
+	}
+
+	public void removeFromFolder(DataBase db, Folder folder) throws SQLException {
+		PreparedStatement st = db.getConnection()
+				.prepareStatement("delete from folderMemberships where folder_id=? and transaction_id=?;");
+		st.setInt(1, folder.getID());
+		st.setInt(2, this.id);
+		st.executeUpdate();
 	}
 
 	public int getId() {

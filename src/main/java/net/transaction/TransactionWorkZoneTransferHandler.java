@@ -8,19 +8,21 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
 
+import net.app.WorkablePanel;
+
 @SuppressWarnings("serial")
 public class TransactionWorkZoneTransferHandler extends TransferHandler {
 
-	private TransactionPanel panel;
+	private WorkablePanel panel;
 
-	public TransactionWorkZoneTransferHandler(TransactionPanel panel) {
+	public TransactionWorkZoneTransferHandler(WorkablePanel panel) {
 		this.panel = panel;
 	}
 
 	@Override
 	protected Transferable createTransferable(JComponent c) {
 		if (c instanceof JTable) {
-			List<Transaction> data = panel.getSelectedTransactionsInWorkZone();
+			List<Transaction> data = panel.getWorkedOnTransactions();
 			if (data.size() == 0) {
 				return null;
 			}
@@ -44,8 +46,8 @@ public class TransactionWorkZoneTransferHandler extends TransferHandler {
 		try {
 			Vector<Transaction> data = (Vector<Transaction>) support.getTransferable()
 					.getTransferData(TransactionTransferable.TRANSACTION_FLAVOR);
-			panel.getApp().getWorkZone().addAll(data);
-			panel.refreshWorkTable();
+			panel.addTransactionsToWork(data);
+			panel.refresh();
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();

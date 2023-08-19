@@ -15,6 +15,7 @@ import java.time.Year;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,11 +42,12 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
 import net.app.App;
+import net.app.WorkablePanel;
 import net.transaction.filter.FilterDialog;
 import net.transaction.filter.FilterOptions;
 
 @SuppressWarnings("serial")
-public class TransactionPanel extends JPanel implements KeyListener {
+public class TransactionPanel extends JPanel implements KeyListener, WorkablePanel {
 
 	private App app;
 
@@ -121,11 +123,14 @@ public class TransactionPanel extends JPanel implements KeyListener {
 		gbc.weightx = 1;
 		queryPanel.add(new JScrollPane(queryTree), gbc);
 
+		JPanel workZone = new JPanel();
+		workZone.setLayout(new GridBagLayout());
 		workTree = new JTree();
 		workTree.setCellRenderer(new TransactionTreeRenderer(app));
 		workTree.setTransferHandler(transferHandler);
-		gbc.gridx = 1;
-		queryPanel.add(new JScrollPane(workTree), gbc);
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		workZone.add(new JScrollPane(workTree), gbc);
 
 		workZoneModel = new TransactionWorkZoneModel(app);
 		workTable = new JTable(workZoneModel);
@@ -156,9 +161,15 @@ public class TransactionPanel extends JPanel implements KeyListener {
 				}
 			}
 		});
-		gbc.gridx = 2;
+		gbc.gridx = 1;
+		gbc.weightx = 2;
+		workZone.add(new JScrollPane(workTable), gbc);
+		workZone.setBorder(BorderFactory.createTitledBorder("Work Zone"));
+
+		gbc.gridx = 1;
+		gbc.gridy = 1;
 		gbc.weightx = 3;
-		queryPanel.add(new JScrollPane(workTable), gbc);
+		queryPanel.add(workZone, gbc);
 
 		gbc.weightx = gbc.weighty = 1;
 		gbc.gridwidth = gbc.gridheight = 1;
@@ -459,6 +470,22 @@ public class TransactionPanel extends JPanel implements KeyListener {
 		public String toString() {
 			return name;
 		}
+	}
+
+	@Override
+	public List<Transaction> getWorkedOnTransactions() {
+		return getSelectedTransactionsInWorkZone();
+	}
+
+	@Override
+	public void addTransactionsToWork(Collection<Transaction> data) {
+		app.getWorkZone().addAll(data);
+
+	}
+
+	@Override
+	public void refresh() {
+		refreshWorkTable();
 	}
 
 }
