@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -30,6 +31,9 @@ import org.knowm.xchart.PieChartBuilder;
 import org.knowm.xchart.PieSeries;
 import org.knowm.xchart.PieSeries.PieSeriesRenderStyle;
 import org.knowm.xchart.XChartPanel;
+import org.knowm.xchart.XYChart;
+import org.knowm.xchart.XYChartBuilder;
+import org.knowm.xchart.XYSeries;
 import org.knowm.xchart.style.PieStyler.AnnotationType;
 
 import net.account.Account;
@@ -56,6 +60,9 @@ public class GraphPanel extends JPanel implements Refreshable {
 
 	private CategoryChart perMonthAccount;
 	private XChartPanel<CategoryChart> perMonthAccountPanel;
+
+	private XYChart perAccountTrends;
+	private XChartPanel<XYChart> perAccountTrendsPanel;
 
 	private JTabbedPane tabs;
 
@@ -116,11 +123,24 @@ public class GraphPanel extends JPanel implements Refreshable {
 
 		tabs.addTab("Per Month", target);
 
+		target = new JPanel();
+		target.setLayout(new GridBagLayout());
+
+		gbc.gridx = gbc.gridy = 0;
+		perAccountTrends = new XYChartBuilder().width(1800).height(400).title("Trends Per Accounts").build();
+		perAccountTrends.getStyler().setDatePattern("yyyy-MM");
+		perAccountTrends.getStyler().setToolTipsEnabled(true);
+		perAccountTrends.getStyler().setyAxisTickLabelsFormattingFunction(d -> d.intValue() + "\u20ac");
+		setXYChartStyle(perAccountTrends);
+		perAccountTrendsPanel = new XChartPanel<>(perAccountTrends);
+		target.add(perAccountTrendsPanel, gbc);
+
+		tabs.addTab("Trends", target);
+
 		setLayout(new GridBagLayout());
 		gbc.gridx = gbc.gridy = 0;
 		gbc.weightx = gbc.weighty = 1;
 		gbc.fill = GridBagConstraints.BOTH;
-
 		add(tabs, gbc);
 
 		refresh();
@@ -277,6 +297,68 @@ public class GraphPanel extends JPanel implements Refreshable {
 		}
 	}
 
+	private void queryPerAccountTrends() {
+		// Removing old series from the chart
+		Set<Entry<String, XYSeries>> data = perAccountTrends.getSeriesMap().entrySet();
+		Iterator<Entry<String, XYSeries>> it = data.iterator();
+		while (it.hasNext()) {
+			it.next();
+			it.remove();
+		}
+		try {
+			ResultSet set = app.getDataBase().getStatement().executeQuery(
+					"select substring(date_application,1,7) as \"date\", sum(case when output = 1 then -amount else amount end) as \"sum\",account as \"account\" from transactions"
+							+ " group by date,account;");
+			// Lists to store final data
+			List<Date> dates = new ArrayList<>();
+			HashMap<Integer, ArrayList<Float>> map = new HashMap<Integer, ArrayList<Float>>();
+			accounts.values().stream().forEach(acc -> map.put(acc.getId(), new ArrayList<>()));
+			map.put(-1, new ArrayList<>());
+			Date last = null;
+			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM");
+			try {
+				while (set.next()) {
+					Date target = format.parse(set.getString("date"));
+					if (!target.equals(last)) {
+						last = target;
+						accounts.values().stream().forEach(acc -> map.get(acc.getId()).add(0f));
+						map.get(-1).add(0f);
+						dates.add(target);
+					}
+					ArrayList<Float> array = map.get(set.getInt("account"));
+					array.set(array.size() - 1, set.getFloat("sum"));
+				}
+				accounts.values().stream().forEach(acc -> {
+					ArrayList<Float> target = map.get(acc.getId());
+					target.set(0, target.get(0) + acc.getBalance());
+					for (int i = 1; i < target.size(); i++) {
+						target.set(i, target.get(i) + target.get(i - 1));
+					}
+				});
+
+				ArrayList<Float> total = map.get(-1);
+				accounts.values().stream().forEach(acc -> {
+					ArrayList<Float> target = map.get(acc.getId());
+					for (int i = 0; i < target.size(); i++) {
+						total.set(i, total.get(i) + target.get(i));
+					}
+				});
+
+				accounts.values().stream().forEach(acc -> {
+					if (map.get(acc.getId()).size() > 0)
+						perAccountTrends.addSeries(acc.getName(), dates, map.get(acc.getId()));
+				});
+
+				perAccountTrends.addSeries("Total", dates, map.get(-1));
+
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
 	private void queryPerAccount() {
 		// Removing old series from the chart
 		Set<Entry<String, PieSeries>> data = perAccount.getSeriesMap().entrySet();
@@ -319,6 +401,10 @@ public class GraphPanel extends JPanel implements Refreshable {
 		queryPerMonthAccounts();
 		perMonthAccountPanel.revalidate();
 		perMonthAccountPanel.repaint();
+
+		queryPerAccountTrends();
+		perAccountTrendsPanel.revalidate();
+		perAccountTrendsPanel.repaint();
 	}
 
 	private void setPieChartStyle(PieChart target) {
@@ -359,6 +445,25 @@ public class GraphPanel extends JPanel implements Refreshable {
 		target.getStyler().setXAxisTickLabelsColor(UIManager.getColor("TextField.foreground"));
 		target.getStyler().setYAxisTickLabelsColor(UIManager.getColor("TextField.foreground"));
 		target.getStyler().setAxisTickLabelsFont(target.getStyler().getAxisTickLabelsFont().deriveFont(15.0f));
+	}
+
+	private void setXYChartStyle(XYChart target) {
+		DecimalFormat format = new DecimalFormat("#.00\u20ac");
+		target.getStyler().setChartBackgroundColor(UIManager.getColor("Panel.background"));
+		target.getStyler().setAnnotationsFontColor(UIManager.getColor("TextField.foreground"));
+		target.getStyler().setPlotBackgroundColor(UIManager.getColor("TextField.background"));
+		target.getStyler().setLegendBorderColor(UIManager.getColor("Panel.foreground"));
+		target.getStyler().setLegendBackgroundColor(UIManager.getColor("TextField.background"));
+		target.getStyler().setChartFontColor(UIManager.getColor("TextField.foreground"));
+		target.getStyler().setLegendFont(target.getStyler().getLegendFont().deriveFont(15.0f));
+		target.getStyler().setAnnotationsFont(target.getStyler().getAnnotationsFont().deriveFont(18.0f));
+		target.getStyler().setToolTipBackgroundColor(UIManager.getColor("TextField.background"));
+		target.getStyler().setToolTipFont(target.getStyler().getToolTipFont().deriveFont(18.0f));
+		target.getStyler().setChartTitleFont(target.getStyler().getChartTitleFont().deriveFont(18.0f));
+		target.getStyler().setXAxisTickLabelsColor(UIManager.getColor("TextField.foreground"));
+		target.getStyler().setYAxisTickLabelsColor(UIManager.getColor("TextField.foreground"));
+		target.getStyler().setAxisTickLabelsFont(target.getStyler().getAxisTickLabelsFont().deriveFont(15.0f));
+		target.getStyler().setyAxisTickLabelsFormattingFunction(d -> format.format(d));
 	}
 
 }

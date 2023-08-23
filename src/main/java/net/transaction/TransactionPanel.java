@@ -293,7 +293,8 @@ public class TransactionPanel extends JPanel implements KeyListener, WorkablePan
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		if (e.isControlDown() && e.isShiftDown() && e.getKeyCode() == KeyEvent.VK_A) {
+		if ((e.isControlDown() && e.isShiftDown() && e.getKeyCode() == KeyEvent.VK_A)
+				|| e.getKeyCode() == KeyEvent.VK_ADD) {
 			table.clearSelection();
 			addTransaction();
 		}
