@@ -60,6 +60,7 @@ public class TransactionDialog extends JDialog {
 
 		// Name
 		JLabel label_name = new JLabel("Name");
+		label_name.setIcon(app.getIconAtlas().getIcon("name", 16));
 		label_name.setAlignmentX(Component.LEFT_ALIGNMENT);
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -72,6 +73,7 @@ public class TransactionDialog extends JDialog {
 
 		// Location
 		JLabel label_location = new JLabel("Location");
+		label_location.setIcon(app.getIconAtlas().getIcon("location", 16));
 		label_location.setAlignmentX(Component.LEFT_ALIGNMENT);
 		gbc.gridy++;
 		up.add(label_location, gbc);
@@ -82,6 +84,7 @@ public class TransactionDialog extends JDialog {
 
 		// Category
 		JLabel label_category = new JLabel("Category");
+		label_category.setIcon(app.getIconAtlas().getIcon("categories", 16));
 		label_category.setAlignmentX(Component.LEFT_ALIGNMENT);
 		gbc.gridy++;
 		gbc.gridwidth = 1;
@@ -103,6 +106,7 @@ public class TransactionDialog extends JDialog {
 
 		// Account
 		JLabel label_account = new JLabel("Account");
+		label_account.setIcon(app.getIconAtlas().getIcon("accounts", 16));
 		label_account.setAlignmentX(Component.LEFT_ALIGNMENT);
 		gbc.gridy = 4;
 		gbc.gridx = 1;
@@ -124,6 +128,7 @@ public class TransactionDialog extends JDialog {
 
 		// Date of creation
 		JLabel label_date_creation = new JLabel("Date of Creation");
+		label_date_creation.setIcon(app.getIconAtlas().getIcon("months", 16));
 		label_date_creation.setAlignmentX(Component.LEFT_ALIGNMENT);
 		gbc.gridy++;
 		gbc.gridx = 0;
@@ -135,6 +140,7 @@ public class TransactionDialog extends JDialog {
 
 		// Date of application
 		JLabel label_date_application = new JLabel("Date of Application");
+		label_date_application.setIcon(app.getIconAtlas().getIcon("months", 16));
 		label_date_application.setAlignmentX(Component.LEFT_ALIGNMENT);
 		gbc.gridy = 6;
 		gbc.gridx = 1;
@@ -146,6 +152,7 @@ public class TransactionDialog extends JDialog {
 
 		// Type
 		JLabel label_type = new JLabel("Type");
+		label_type.setIcon(app.getIconAtlas().getIcon("type", 16));
 		label_type.setAlignmentX(Component.LEFT_ALIGNMENT);
 		gbc.gridx = 0;
 		gbc.gridy++;
@@ -160,6 +167,7 @@ public class TransactionDialog extends JDialog {
 
 		// Done
 		JLabel label_status = new JLabel("Status");
+		label_status.setIcon(app.getIconAtlas().getIcon("status", 16));
 		label_status.setAlignmentX(Component.LEFT_ALIGNMENT);
 		gbc.gridy = 8;
 		gbc.gridx = 1;
@@ -171,6 +179,7 @@ public class TransactionDialog extends JDialog {
 
 		// Amount
 		JLabel label_amount = new JLabel("Amount");
+		label_amount.setIcon(app.getIconAtlas().getIcon("amount", 16));
 		label_amount.setAlignmentX(Component.LEFT_ALIGNMENT);
 		gbc.gridy++;
 		gbc.gridx = 0;
