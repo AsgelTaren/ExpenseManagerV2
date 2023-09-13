@@ -59,7 +59,7 @@ public class App {
 		// db = new DataBase();
 		logger.info("Connected to the database");
 		// UI
-		frame = new JFrame("ExpenseManagerV2");
+		frame = new JFrame("GearCAO");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setIconImage(iconAtlas.getRawImage("logo", 64));
 		// Menu bar
